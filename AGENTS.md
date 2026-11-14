@@ -4,7 +4,7 @@ Instructions for AI coding agents working in this repository. Humans: see [READM
 
 ## Project in one paragraph
 
-**Document: Fill and Deliver** (CS300-CPThought) is a web application for structured document preparation, form filling, delegation, submission, review, and authoritative DOCX/PDF export. Proposed baseline architecture: **React + TypeScript + Vite** frontend, **FastAPI + Python** modular-monolith backend, **PostgreSQL**, **Firebase Auth**, and optional **Ollama-compatible LLM** advisory checks (see [docs/architecture/c4/README.md](docs/architecture/c4/README.md)).
+**Document: Fill and Deliver** is a web application for structured document preparation, form filling, delegation, submission, review, and authoritative DOCX/PDF export. Proposed baseline architecture: **React + TypeScript + Vite** frontend, **FastAPI + Python** modular-monolith backend, **PostgreSQL**, **Firebase Auth**, and optional **Ollama-compatible LLM** advisory checks (see [docs/architecture/c4/README.md](docs/architecture/c4/README.md)).
 
 ## Source-of-truth & reading order
 

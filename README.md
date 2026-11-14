@@ -1,4 +1,4 @@
-# CS300-CPThought — Document: Fill and Deliver
+# Document: Fill and Deliver
 
 Structured document preparation, form filling, delegation, submission, review, and authoritative DOCX/PDF export.
 
