@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  repo-sanity:
+    name: Repository Sanity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check required repo docs exist
+        run: |
+          test -f AGENTS.md
+          test -f GLOSSARY.md
+          test -f docs/MISSING_CONTEXT.md
+
+  # Uncomment and adapt once src/backend and src/frontend are scaffolded:
+  # backend:
+  #   name: Backend (lint, typecheck, test)
+  #   runs-on: ubuntu-latest
+  #   defaults:
+  #     run:
+  #       working-directory: src/backend
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-python@v5
+  #       with:
+  #         python-version: "3.12"
+  #     - run: pip install -e ".[dev]"
+  #     - run: ruff check . && mypy . && pytest
+  #
+  # frontend:
+  #   name: Frontend (typecheck, lint, test, build)
+  #   runs-on: ubuntu-latest
+  #   defaults:
+  #     run:
+  #       working-directory: src/frontend
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: "22"
+  #         cache: "npm"
+  #         cache-dependency-path: src/frontend/package-lock.json
+  #     - run: npm ci
+  #     - run: npm run typecheck && npm run lint && npm test && npm run build

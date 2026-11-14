@@ -1,0 +1,73 @@
+digraph BackendComponent {
+  graph [label="C4 LEVEL 3  |  Backend Component Diagram\nDocument: Fill and Deliver  •  Proposed Architecture", labelloc=t, fontsize=28, fontname="DejaVu Sans", fontcolor="#17263d", bgcolor="#ffffff", rankdir=TB, splines=polyline, nodesep=0.45, ranksep=0.80, pad=0.32, compound=true, newrank=true, outputorder=edgesfirst];
+  node [shape=box, style="rounded,filled", fontname="DejaVu Sans", fontsize=13, color="#99b4c8", penwidth=1.4, margin="0.20,0.14", fontcolor="#17314b", fillcolor="#f3f7fb"];
+  edge [fontname="DejaVu Sans", fontsize=10, color="#597995", fontcolor="#3f607a", arrowsize=0.75, penwidth=1.2];
+
+  web [label=<<B>Web Application</B><BR/><FONT POINT-SIZE="11">[Container: React · TypeScript]</FONT><BR/><FONT POINT-SIZE="10">Browser UI: editor, tasks, reviews</FONT>>, fillcolor="#e7f3ff", color="#5c92d0"];
+
+  subgraph cluster_api {
+    label=<<B>API Application</B><BR/><FONT POINT-SIZE="12">[Container: Python · FastAPI · Modular Monolith]</FONT>>;
+    style="rounded,filled";
+    fillcolor="#f6f9fd";
+    color="#416c9e";
+    penwidth=2;
+    margin=25;
+    fontsize=17;
+    fontname="DejaVu Sans";
+    fontcolor="#234e7c";
+
+    api [label=<<B>API Endpoints</B><BR/><FONT POINT-SIZE="11">[Component: FastAPI routers]</FONT><BR/><FONT POINT-SIZE="10">REST / WebSocket entry and request validation</FONT>>, fillcolor="#dce9ff", color="#5e89bf"];
+    access [label=<<B>Identity &amp; Access Policy</B><BR/><FONT POINT-SIZE="11">[Component: Firebase Admin + RBAC]</FONT><BR/><FONT POINT-SIZE="10">Workspace, task, recipient, field scope</FONT>>, fillcolor="#ddf6ed", color="#5aac96"];
+
+    template [label=<<B>Preset &amp; Template</B><BR/><FONT POINT-SIZE="11">[Component: Python]</FONT><BR/><FONT POINT-SIZE="10">Import / review anchors; publish schema</FONT>>, fillcolor="#e7f4f4", color="#74afa8"];
+    draft [label=<<B>Document &amp; Draft</B><BR/><FONT POINT-SIZE="11">[Component: Python]</FONT><BR/><FONT POINT-SIZE="10">Typed fields, autosave, draft revisions</FONT>>, fillcolor="#e7f4f4", color="#74afa8"];
+    task [label=<<B>Task &amp; Delegation</B><BR/><FONT POINT-SIZE="11">[Component: Python]</FONT><BR/><FONT POINT-SIZE="10">Independent assignments; field subsets</FONT>>, fillcolor="#e7f4f4", color="#74afa8"];
+    submission [label=<<B>Submission &amp; Review</B><BR/><FONT POINT-SIZE="11">[Component: Python]</FONT><BR/><FONT POINT-SIZE="10">Immutable snapshots; review; manual Apply</FONT>>, fillcolor="#e7f4f4", color="#74afa8"];
+    verify [label=<<B>Verification</B><BR/><FONT POINT-SIZE="11">[Component: Python]</FONT><BR/><FONT POINT-SIZE="10">Deterministic rules; optional LLM advice</FONT>>, fillcolor="#e7f4f4", color="#74afa8"];
+    comms [label=<<B>Discussion &amp; Notifications</B><BR/><FONT POINT-SIZE="11">[Component: Python]</FONT><BR/><FONT POINT-SIZE="10">Task comments, events, reminders</FONT>>, fillcolor="#e7f4f4", color="#74afa8"];
+
+    engine [label=<<B>Document Processing Engine</B><BR/><FONT POINT-SIZE="11">[Component: python-docx · lxml · LibreOffice]</FONT><BR/><FONT POINT-SIZE="10">DOCX anchors; PDF preview / export</FONT>>, fillcolor="#fff2db", color="#d4a556"];
+    repository [label=<<B>Persistence &amp; File Gateways</B><BR/><FONT POINT-SIZE="11">[Component: SQLAlchemy · object adapter]</FONT><BR/><FONT POINT-SIZE="10">Transactions, version checks, file access</FONT>>, fillcolor="#fff2db", color="#d4a556"];
+
+    {rank=same; api; access}
+    {rank=same; template; draft; verify}
+    {rank=same; task; submission; comms}
+    {rank=same; engine; repository}
+    template -> draft [style=invis, weight=40]; draft -> verify [style=invis, weight=40];
+    task -> submission [style=invis, weight=40]; submission -> comms [style=invis, weight=40];
+    engine -> repository [style=invis, weight=15];
+
+    api -> access [label="authorizes requests"];
+    api -> template [label="manage templates", minlen=2];
+    api -> draft [label="edit / preview", minlen=2];
+    api -> verify [label="request checks", minlen=2];
+    api -> task [label="assign / delegate", minlen=2];
+    api -> submission [label="submit / review / apply", minlen=2];
+    api -> comms [label="comments / events", minlen=2];
+
+    template -> engine [label="parse / bind source"];
+    draft -> engine [label="render draft"];
+    submission -> repository [label="transactional snapshots"];
+    task -> repository [label="scoped assignments"];
+    comms -> repository [label="messages & events"];
+    draft -> repository [label="revisioned drafts"];
+    template -> repository [label="presets, versions"];
+    verify -> repository [label="validation results"];
+    engine -> repository [label="stored files", constraint=false];
+    submission -> draft [label="snapshot / manual Apply", constraint=false, style=dashed, color="#b5764e", fontcolor="#945d39"];
+  }
+
+  firebase [label=<<B>Firebase Authentication</B><BR/><FONT POINT-SIZE="11">[External System]</FONT><BR/><FONT POINT-SIZE="10">User identity / ID tokens</FONT>>, fillcolor="#f0e8fb", color="#9b80bc"];
+  llm [label=<<B>Ollama Inference API</B><BR/><FONT POINT-SIZE="11">[External System — optional]</FONT><BR/><FONT POINT-SIZE="10">Semantic checking, no content rewriting</FONT>>, fillcolor="#f0e8fb", color="#9b80bc"];
+  pg [label=<<B>PostgreSQL</B><BR/><FONT POINT-SIZE="11">[Container: Relational Database]</FONT><BR/><FONT POINT-SIZE="10">Tasks, drafts, reviews, rules</FONT>>, fillcolor="#eef0ff", color="#8d9cce"];
+  store [label=<<B>R2 / Local File Storage</B><BR/><FONT POINT-SIZE="11">[Container: Object/File Store]</FONT><BR/><FONT POINT-SIZE="10">Source DOCX and rendered DOCX/PDF</FONT>>, fillcolor="#eef0ff", color="#8d9cce"];
+
+  web -> api [label="HTTPS / JSON; WebSocket", color="#4476ae", penwidth=1.8];
+  access -> firebase [label="verifies identity", color="#9475b2"];
+  verify -> llm [label="optional HTTPS", color="#9475b2"];
+  repository -> pg [label="SQL / TCP", color="#737bb3"];
+  repository -> store [label="S3 / file I/O", color="#737bb3"];
+
+  {rank=same; firebase; llm; pg; store}
+  firebase -> llm [style=invis, weight=20]; llm -> pg [style=invis, weight=20]; pg -> store [style=invis, weight=20];
+}

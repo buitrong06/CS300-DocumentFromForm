@@ -1,0 +1,58 @@
+digraph FrontendComponent {
+  graph [label="C4 LEVEL 3  |  Web Application Component Diagram\nDocument: Fill and Deliver  •  Proposed Architecture", labelloc=t, fontsize=28, fontname="DejaVu Sans", fontcolor="#17263d", bgcolor="#ffffff", rankdir=TB, splines=polyline, nodesep=0.48, ranksep=0.88, pad=0.34, compound=true, newrank=true, outputorder=edgesfirst];
+  node [shape=box, style="rounded,filled", fontname="DejaVu Sans", fontsize=13, color="#99b4c8", penwidth=1.4, margin="0.20,0.14", fontcolor="#17314b", fillcolor="#f3f7fb"];
+  edge [fontname="DejaVu Sans", fontsize=10, color="#597995", fontcolor="#3f607a", arrowsize=0.75, penwidth=1.2];
+
+  user [label=<<B>User: Assigner / Assignee / Personal User</B><BR/><FONT POINT-SIZE="11">[Person]</FONT><BR/><FONT POINT-SIZE="10">Creates templates, completes forms, reviews tasks, or prepares personal docs</FONT>>, fillcolor="#dfeaf3", color="#799bae"];
+
+  subgraph cluster_web {
+    label=<<B>Web Application</B><BR/><FONT POINT-SIZE="12">[Container: React · TypeScript · Vite]</FONT>>;
+    style="rounded,filled"; fillcolor="#f6f9fd"; color="#416c9e"; penwidth=2; margin=24; fontsize=17; fontname="DejaVu Sans"; fontcolor="#234e7c";
+
+    shell [label=<<B>App Shell &amp; Routing</B><BR/><FONT POINT-SIZE="11">[Component: React Router]</FONT><BR/><FONT POINT-SIZE="10">Navigation, guarded pages, layout</FONT>>, fillcolor="#dce9ff", color="#5e89bf"];
+    session [label=<<B>Session UI</B><BR/><FONT POINT-SIZE="11">[Component: Firebase SDK]</FONT><BR/><FONT POINT-SIZE="10">Sign-in state, ID token acquisition</FONT>>, fillcolor="#ddf6ed", color="#5aac96"];
+
+    designer [label=<<B>Preset / Template Builder</B><BR/><FONT POINT-SIZE="11">[Component: React]</FONT><BR/><FONT POINT-SIZE="10">Upload, candidate review, field setup</FONT>>, fillcolor="#e7f4f4", color="#74afa8"];
+    editor [label=<<B>Guided Form Editor</B><BR/><FONT POINT-SIZE="11">[Component: React Hook Form · Tiptap]</FONT><BR/><FONT POINT-SIZE="10">Typed fields, instructions, autosave</FONT>>, fillcolor="#e7f4f4", color="#74afa8"];
+    preview [label=<<B>Live Preview</B><BR/><FONT POINT-SIZE="11">[Component: PDF.js]</FONT><BR/><FONT POINT-SIZE="10">Displays authoritative rendered PDF</FONT>>, fillcolor="#e7f4f4", color="#74afa8"];
+    workflow [label=<<B>Task &amp; Delegation UI</B><BR/><FONT POINT-SIZE="11">[Component: React]</FONT><BR/><FONT POINT-SIZE="10">Assignments, field scopes, progress</FONT>>, fillcolor="#e7f4f4", color="#74afa8"];
+    review [label=<<B>Submission &amp; Review UI</B><BR/><FONT POINT-SIZE="11">[Component: React]</FONT><BR/><FONT POINT-SIZE="10">Snapshots, feedback, manual Apply</FONT>>, fillcolor="#e7f4f4", color="#74afa8"];
+    messages [label=<<B>Discussion &amp; Notification UI</B><BR/><FONT POINT-SIZE="11">[Component: React]</FONT><BR/><FONT POINT-SIZE="10">Task comments and activity updates</FONT>>, fillcolor="#e7f4f4", color="#74afa8"];
+
+    api [label=<<B>API / Realtime Client</B><BR/><FONT POINT-SIZE="11">[Component: TanStack Query · fetch · WebSocket]</FONT><BR/><FONT POINT-SIZE="10">Authenticated requests, caching, subscriptions</FONT>>, fillcolor="#fff2db", color="#d4a556"];
+    cache [label=<<B>Local Draft Cache</B><BR/><FONT POINT-SIZE="11">[Component: IndexedDB · Dexie, optional]</FONT><BR/><FONT POINT-SIZE="10">Local persistence and retry policy</FONT>>, fillcolor="#fff2db", color="#d4a556"];
+
+    {rank=same; shell; session}
+    {rank=same; designer; editor; preview}
+    {rank=same; workflow; review; messages}
+    {rank=same; api; cache}
+    designer -> editor [style=invis, weight=50]; editor -> preview [style=invis, weight=50];
+    workflow -> review [style=invis, weight=50]; review -> messages [style=invis, weight=50];
+    api -> cache [style=invis, weight=15];
+
+    shell -> session [label="session state"];
+    shell -> designer [label="template route"];
+    shell -> editor [label="document route"];
+    shell -> workflow [label="task route"];
+    shell -> review [label="review route"];
+    shell -> messages [label="discussion route"];
+    editor -> preview [label="refresh display", color="#b5764e"];
+    designer -> api [label="publish / import"];
+    editor -> api [label="save / validate"];
+    preview -> api [label="request PDF preview"];
+    workflow -> api [label="assign / track"];
+    review -> api [label="submit / review / apply"];
+    messages -> api [label="messages / subscribe"];
+    editor -> cache [label="optional draft cache", style=dashed, color="#b5764e"];
+    session -> api [label="attach ID token", constraint=false];
+  }
+
+  firebase [label=<<B>Firebase Authentication</B><BR/><FONT POINT-SIZE="11">[External System]</FONT><BR/><FONT POINT-SIZE="10">Issues user ID tokens</FONT>>, fillcolor="#f0e8fb", color="#9b80bc"];
+  backend [label=<<B>API Application</B><BR/><FONT POINT-SIZE="11">[Container: Python · FastAPI]</FONT><BR/><FONT POINT-SIZE="10">Authorized business operations / render</FONT>>, fillcolor="#eef0ff", color="#8d9cce"];
+
+  user -> shell [label="uses browser UI", color="#4476ae", penwidth=1.8];
+  session -> firebase [label="auth SDK", color="#9475b2"];
+  api -> backend [label="HTTPS / JSON; WebSocket", color="#737bb3"];
+  {rank=same; firebase; backend}
+  firebase -> backend [style=invis, weight=10];
+}

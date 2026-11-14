@@ -1,0 +1,35 @@
+digraph Container {
+  graph [label="C4 LEVEL 2  |  Container Diagram\nDocument: Fill and Deliver  •  CS300 PA02", labelloc=t, fontsize=27, fontname="DejaVu Sans", fontcolor="#19334f", bgcolor="#ffffff", rankdir=TB, splines=polyline, nodesep=0.75, ranksep=0.80, pad=0.38, compound=true, newrank=true, outputorder=edgesfirst];
+  node [shape=box, style="rounded,filled", fontname="DejaVu Sans", fontsize=13, margin="0.24,0.17", color="#91aac0", penwidth=1.6, fontcolor="#19334f"];
+  edge [fontname="DejaVu Sans", fontsize=10.5, color="#5a7793", fontcolor="#48647e", arrowsize=0.78, penwidth=1.5];
+
+  users [label=<<B>Users</B><BR/><FONT POINT-SIZE="11">[Person]</FONT><BR/><FONT POINT-SIZE="10">Assigner, Assignee, Personal User</FONT>>, fillcolor="#dcecf8", color="#7aa6ca"];
+  firebase [label=<<B>Firebase Authentication</B><BR/><FONT POINT-SIZE="11">[External Software System]</FONT><BR/><FONT POINT-SIZE="10">Sign-in and ID token verification</FONT>>, fillcolor="#eee9f8", color="#a18aca"];
+  llm [label=<<B>Ollama Inference API</B><BR/><FONT POINT-SIZE="11">[External Software System — optional]</FONT><BR/><FONT POINT-SIZE="10">Semantic content-check feedback</FONT>>, fillcolor="#eee9f8", color="#a18aca"];
+
+  subgraph cluster_system {
+    label=<<B>Document: Fill and Deliver</B><BR/><FONT POINT-SIZE="11">[Software System Boundary — proposed deployment]</FONT>>;
+    style="rounded,filled"; fillcolor="#f6f9fc"; color="#6688af"; penwidth=2.0; margin=30; fontsize=20; fontname="DejaVu Sans"; fontcolor="#27557e";
+
+    web [label=<<B>Web Application</B><BR/><FONT POINT-SIZE="11">[Container: React · TypeScript · Vite]</FONT><BR/><FONT POINT-SIZE="10">Guided form, template builder, preview,</FONT><BR/><FONT POINT-SIZE="10">tasks, submission and review UI</FONT><BR/><FONT POINT-SIZE="9">Hosted on Cloudflare Pages [proposed]</FONT>>, fillcolor="#dceaff", color="#5c92d0"];
+    api [label=<<B>API Application</B><BR/><FONT POINT-SIZE="11">[Container: Python · FastAPI]</FONT><BR/><FONT POINT-SIZE="10">Modular Monolith: permissions, templates,</FONT><BR/><FONT POINT-SIZE="10">drafts, tasks, reviews, verification and</FONT><BR/><FONT POINT-SIZE="10">DOCX/PDF rendering (LibreOffice)</FONT><BR/><FONT POINT-SIZE="9">Docker / VPS [proposed]</FONT>>, fillcolor="#dcf3e9", color="#68ae98"];
+    database [label=<<B>PostgreSQL Database</B><BR/><FONT POINT-SIZE="11">[Container: PostgreSQL]</FONT><BR/><FONT POINT-SIZE="10">Workspace permissions, presets, drafts,</FONT><BR/><FONT POINT-SIZE="10">tasks, submissions, reviews, versions</FONT>>, fillcolor="#fff2dc", color="#d1aa63"];
+    storage [label=<<B>Document File Store</B><BR/><FONT POINT-SIZE="11">[Container: Cloudflare R2 / local MVP]</FONT><BR/><FONT POINT-SIZE="10">Original templates, source DOCX,</FONT><BR/><FONT POINT-SIZE="10">generated DOCX/PDF artifacts</FONT>>, fillcolor="#fff2dc", color="#d1aa63"];
+
+    web -> api [label="Calls application functions\n[JSON/HTTPS; WebSocket]", color="#2d78aa", fontcolor="#2c648c", penwidth=2.0, minlen=1];
+    api -> database [label="Reads and writes data\n[SQL/TCP]", minlen=1];
+    api -> storage [label="Reads and writes documents\n[S3-compatible API / local I/O]", minlen=1];
+    {rank=same; database; storage}
+    database -> storage [style=invis, weight=40];
+  }
+
+  users -> web [label="Uses through a browser\n[HTTPS]", color="#2d78aa", fontcolor="#2c648c"];
+  web -> firebase [label="Signs in / obtains ID token\n[Firebase SDK / HTTPS]", color="#9578c0", fontcolor="#795b9f", constraint=false];
+  api -> firebase [label="Validates ID token\n[Firebase Admin SDK]", color="#9578c0", fontcolor="#795b9f", constraint=false];
+  api -> llm [label="Requests advisory feedback\n[HTTPS, optional]", style=dashed, color="#9578c0", fontcolor="#795b9f", constraint=false];
+
+  {rank=same; users; firebase}
+  {rank=same; database; storage; llm}
+  users -> firebase [style=invis, weight=4];
+  storage -> llm [style=invis, weight=4];
+}

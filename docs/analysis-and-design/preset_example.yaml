@@ -1,0 +1,575 @@
+# Preset thể thức văn bản hành chính theo Nghị định 30/2020/NĐ-CP.
+#
+# Bố cục file theo 3 bậc:
+#   core       Thuộc tính chính, văn bản nào cũng có, chỉ dùng từ khóa cơ bản (cỡ chữ, đậm, căn lề...).
+#              Renderer tối thiểu chỉ cần hiểu khối này là ra được văn bản đọc được.
+#   advanced   Thuộc tính thêm, ít gặp hoặc rườm rà nhưng vẫn viết rule được
+#              (đường kẻ, mẫu chuỗi, đánh số, bố cục, quy tắc trang, điều kiện, thành phần phụ).
+#              Mỗi khối con tương ứng một mô-đun code trong renderer và bộ kiểm tra.
+#   unruled    Chưa viết rule được:
+#                semantic_criteria  -> chuyển sang kiểm tra nội dung bằng LLM (UC-A04, UC-A07)
+#                manual_checks      -> hiển thị để người dùng tự kiểm tra
+#
+# Hai khối đi kèm:
+#   document_types  Khung theo loại văn bản (PL III), ghép các thành phần của core và advanced.
+#   evidence        Nguồn gốc của từng giá trị, khóa theo đường dẫn. LLM điền khối này khi trích xuất.
+#
+# Các khối core và advanced đều khóa theo tên vai trò (quoc_hieu, trich_yeu...).
+# Renderer gộp các thuộc tính của cùng một vai trò từ mọi khối.
+#
+# Đơn vị: độ dài mm, cỡ chữ và khoảng cách đoạn pt, độ dài đường kẻ là tỉ lệ so với dòng chữ phía trên.
+# Quy ước ref: "PL I, II.5.b" = Phụ lục I, Phần I, Mục II, khoản 5, điểm b. Trang là trang của file PDF.
+
+schema_version: 2
+
+meta:
+  id: nd30-2020
+  name: Thể thức văn bản hành chính (Nghị định 30/2020/NĐ-CP)
+  version: 1
+  extends: null
+  regulation:
+    id: nd30
+    title: Nghị định 30/2020/NĐ-CP về công tác văn thư
+    issued: "2020-03-05"
+  authored_by: human
+
+# =============================================================================
+# BẬC 1 - CORE
+# Từ khóa cho phép: size, size_allowed, case (upper | normal | as_written), bold, italic,
+#   align (left | center | right | justify), first_line_indent, first_line_indent_allowed,
+#   space_before_pt, space_after_pt, space_after_min_pt, line_spacing, line_spacing_allowed,
+#   fixed_text, optional
+# =============================================================================
+core:
+  page:
+    size: A4
+    orientation: portrait
+    margin:         { top: 20, bottom: 20, left: 30, right: 15 }
+    margin_allowed: { top: [20, 25], bottom: [20, 25], left: [30, 35], right: [15, 20] }
+
+  font:
+    family: Times New Roman
+    encoding: "TCVN 6909:2001"
+    color: "000000"
+
+  styles:
+    so_trang:         { size: 14, size_allowed: [13, 14], case: normal, align: center }
+
+    # Ô 1
+    quoc_hieu:        { size: 13, size_allowed: [12, 13], case: upper, bold: true, align: center,
+                        fixed_text: "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM" }
+    tieu_ngu:         { size: 14, size_allowed: [13, 14], case: as_written, bold: true, align: center,
+                        fixed_text: "Độc lập - Tự do - Hạnh phúc" }
+    # Ô 2
+    co_quan_chu_quan: { size: 13, size_allowed: [12, 13], case: upper, align: center, optional: true }
+    co_quan_ban_hanh: { size: 13, size_allowed: [12, 13], case: upper, bold: true, align: center }
+    # Ô 3, 4
+    so_ky_hieu:       { size: 13, size_allowed: [13, 13], align: center }
+    dia_danh_ngay:    { size: 14, size_allowed: [13, 14], case: normal, italic: true, align: center }
+    # Ô 5a, 5b
+    ten_loai:         { size: 14, size_allowed: [13, 14], case: upper, bold: true, align: center }
+    trich_yeu:        { size: 14, size_allowed: [13, 14], case: normal, bold: true, align: center }
+    trich_yeu_cong_van: { size: 13, size_allowed: [12, 13], case: normal, align: center, space_before_pt: 6 }
+    # Ô 6
+    can_cu:           { size: 14, size_allowed: [13, 14], case: normal, italic: true, align: justify,
+                        first_line_indent: 12.7 }
+    body:             { size: 14, size_allowed: [13, 14], case: normal, align: justify,
+                        first_line_indent: 12.7, first_line_indent_allowed: [10, 12.7],
+                        space_after_pt: 6, space_after_min_pt: 6,
+                        line_spacing: 1.15, line_spacing_allowed: [1.0, 1.5] }
+    phan_label:       { size: 14, case: normal, bold: true, align: center }
+    phan_title:       { size: 14, case: upper,  bold: true, align: center }
+    chuong_label:     { size: 14, case: normal, bold: true, align: center }
+    chuong_title:     { size: 14, case: upper,  bold: true, align: center }
+    muc_label:        { size: 14, case: normal, bold: true, align: center }
+    muc_title:        { size: 14, case: upper,  bold: true, align: center }
+    tieu_muc_label:   { size: 14, case: normal, bold: true, align: center }
+    tieu_muc_title:   { size: 14, case: upper,  bold: true, align: center }
+    muc_la_ma:        { size: 14, case: upper,  bold: true, align: left }
+    dieu:             { size: 14, case: normal, bold: true, first_line_indent: 12.7 }
+    khoan:            { size: 14, case: normal, first_line_indent: 12.7 }
+    khoan_co_tieu_de: { size: 14, case: normal, bold: true, first_line_indent: 12.7 }
+    diem:             { size: 14, case: normal, first_line_indent: 12.7 }
+    # Ô 9a, 9b
+    kinh_gui:         { size: 14, size_allowed: [13, 14], case: normal }
+    noi_nhan_label:   { size: 12, size_allowed: [12, 12], case: normal, bold: true, italic: true, align: left }
+    noi_nhan_item:    { size: 11, size_allowed: [11, 11], case: normal, align: left }
+    # Ô 7a, 7b
+    quyen_han:        { size: 14, size_allowed: [13, 14], case: upper, bold: true, align: center }
+    chuc_vu:          { size: 14, size_allowed: [13, 14], case: upper, bold: true, align: center }
+    ho_ten:           { size: 14, size_allowed: [13, 14], case: normal, bold: true, align: center }
+
+# =============================================================================
+# BẬC 2 - ADVANCED
+# =============================================================================
+advanced:
+
+  # --- Thành phần ít gặp. Dùng cùng từ khóa với core.styles ---------------------
+  styles:
+    phu_luc_label:      { size: 14, size_allowed: [14, 14], case: normal, bold: true, align: center }
+    phu_luc_title:      { size: 14, size_allowed: [13, 14], case: upper, bold: true, align: center }
+    phu_luc_chi_dan:    { size: 14, size_allowed: [13, 14], case: normal, italic: true, align: center }
+    dia_chi_co_quan:    { size: 11, size_allowed: [11, 12], case: normal, align: left, optional: true }
+    ky_hieu_nguoi_soan: { size: 11, size_allowed: [11, 11], case: upper, optional: true }
+    dau_khan:           { size: 13, size_allowed: [13, 14], case: upper, bold: true, align: center, optional: true }
+    pham_vi_luu_hanh:   { size: 13, size_allowed: [13, 14], case: upper, bold: true, align: center, optional: true }
+
+  # --- Ràng buộc giữa nhiều thành phần -------------------------------------------
+  constraints:
+    size_consistency:
+      groups:
+        tier_a: [quoc_hieu, co_quan_chu_quan, co_quan_ban_hanh, trich_yeu_cong_van]
+        tier_b: [tieu_ngu, dia_danh_ngay, ten_loai, trich_yeu, can_cu, body, kinh_gui,
+                 quyen_han, chuc_vu, ho_ten, so_trang, phu_luc_title, phu_luc_chi_dan]
+      profiles:
+        large: { tier_a: 13, tier_b: 14 }
+        small: { tier_a: 12, tier_b: 13 }
+      applied: large
+    same_size_as_body:
+      [phan_label, phan_title, chuong_label, chuong_title, muc_label, muc_title,
+       tieu_muc_label, tieu_muc_title, muc_la_ma, dieu, khoan, khoan_co_tieu_de, diem]
+
+  # --- Đường kẻ ---------------------------------------------------------------
+  decorations:
+    tieu_ngu:         { rule_below: { length: 1.0 } }
+    co_quan_ban_hanh: { rule_below: { length: 0.4, length_allowed: [0.33, 0.5] } }
+    trich_yeu:        { rule_below: { length: 0.4, length_allowed: [0.33, 0.5] } }
+    phu_luc_chi_dan:  { rule_below: { length: 0.3 } }
+    dia_chi_co_quan:  { rule_above: { length: full_width } }
+    dau_khan:         { frame: { border: single, sizes_mm: [[30, 8], [40, 8], [20, 8]] }, color: red }
+    pham_vi_luu_hanh: { frame: { border: single } }
+
+  # --- Quy tắc chữ và dấu câu ----------------------------------------------------
+  text_rules:
+    so_ky_hieu:         { mixed_case: { label: "Số", label_case: normal, symbol_case: upper } }
+    trich_yeu_cong_van: { prefix: "V/v " }
+    can_cu:             { line_end: ";", last_line_end: "." }
+    body:               { document_end: "./." }
+    kinh_gui:
+      label: "Kính gửi:"
+      single_recipient: same_line
+      multi_recipient: { item_prefix: "- ", item_end: ";", last_item_end: "." }
+    noi_nhan_label:     { label: "Nơi nhận:" }
+    noi_nhan_item:
+      item_prefix: "- "
+      item_end: ";"
+      last_item_pattern: "- Lưu: VT, {don_vi_soan_thao}{so_ban_luu}."
+    quyen_han:          { allowed_prefixes: ["TM.", "Q.", "KT.", "TL.", "TUQ."] }
+    dau_khan:           { allowed_values: ["HỎA TỐC", "THƯỢNG KHẨN", "KHẨN"] }
+    pham_vi_luu_hanh:   { examples: ["XEM XONG TRẢ LẠI", "LƯU HÀNH NỘI BỘ"] }
+    content_headings:   { title_required_for: [phan, chuong, muc, tieu_muc, dieu] }
+
+  # --- Mẫu chuỗi ----------------------------------------------------------------
+  patterns:
+    so_ky_hieu:
+      co_ten_loai: "Số: {so}/{abbr_loai}-{abbr_co_quan}"
+      cong_van:    "Số: {so}/{abbr_co_quan}-{abbr_don_vi_soan}"
+      so_pad_zero_below: 10
+      so_may_be_blank: true
+      separator_number_symbol: "/"
+      separator_symbol_groups: "-"
+    dia_danh_ngay:
+      format: "{dia_danh}, ngày {dd} tháng {m} năm {yyyy}"
+      day_pad_zero_below: 10
+      month_pad_zero_only: [1, 2]
+    phu_luc_chi_dan: "(Kèm theo {loai_van_ban} số {so_ky_hieu} ngày {dd} tháng {m} năm {yyyy} của {co_quan_ban_hanh})"
+    ky_hieu_nguoi_soan: "{viet_tat_nguoi_soan}.({so_luong_ban})"
+
+  # --- Đánh số ----------------------------------------------------------------
+  numbering:
+    sequences:
+      roman: [I, II, III, IV, V, VI, VII, VIII, IX, X, XI, XII, XIII, XIV, XV]
+      vn_alpha: [a, b, c, d, đ, e, g, h, i, k, l, m, n, o, p, q, r, s, t, u, v, x, y]
+    formats:
+      phan_label:       "Phần {roman}"
+      chuong_label:     "Chương {roman}"
+      muc_label:        "Mục {arabic}"
+      tieu_muc_label:   "Tiểu mục {arabic}"
+      muc_la_ma:        "{roman}. "
+      dieu:             "Điều {arabic}. "
+      khoan:            "{arabic}. "
+      khoan_co_tieu_de: "{arabic}. "
+      diem:             "{vn_alpha}) "
+      phu_luc_label:    "Phụ lục {roman}"
+      so_trang:         "{arabic}"
+
+  # --- Cấu trúc nội dung (cấp nào được chứa cấp nào) ----------------------------
+  content_structures:
+    chuong_dieu:
+      roots: [phan, chuong, dieu]
+      levels:
+        phan:     { styles: [phan_label, phan_title],         children: [chuong] }
+        chuong:   { styles: [chuong_label, chuong_title],     children: [muc, dieu] }
+        muc:      { styles: [muc_label, muc_title],           children: [tieu_muc, dieu] }
+        tieu_muc: { styles: [tieu_muc_label, tieu_muc_title], children: [dieu] }
+        dieu:     { styles: [dieu],                           children: [khoan, body] }
+        khoan:    { styles: [khoan, khoan_co_tieu_de],        children: [diem, body] }
+        diem:     { styles: [diem],                           children: [body] }
+    phan_muc:
+      roots: [phan, muc_la_ma, khoan]
+      levels:
+        phan:      { styles: [phan_label, phan_title],  children: [muc_la_ma] }
+        muc_la_ma: { styles: [muc_la_ma],               children: [khoan, body] }
+        khoan:     { styles: [khoan, khoan_co_tieu_de], children: [diem, body] }
+        diem:      { styles: [diem],                    children: [body] }
+    van_xuoi:
+      roots: [paragraph]
+      levels:
+        paragraph: { styles: [body], children: [] }
+
+  # --- Bố cục (sơ đồ PL I, Mục IV) ----------------------------------------------
+  # Hậu tố "?" = tùy chọn, "*" = lặp nhiều dòng. Phải đặt trong nháy vì "?" là ký tự cú pháp YAML.
+  layout:
+    header:
+      type: borderless_table
+      columns: [0.42, 0.58]
+      rows:
+        - [ [co_quan_chu_quan, co_quan_ban_hanh],    [quoc_hieu, tieu_ngu] ]   # ô 2 | ô 1
+        - [ [so_ky_hieu, "trich_yeu_cong_van?"],     [dia_danh_ngay] ]         # ô 3, 5b | ô 4
+      spacing:
+        quoc_hieu_to_tieu_ngu: single_line
+        chu_quan_to_ban_hanh: single_line
+    top_right_marks:
+      blocks: ["pham_vi_luu_hanh?"]                                             # ô 11
+    title:
+      blocks: [ten_loai, trich_yeu]                                             # ô 5a
+      space_before: one_blank_line
+    left_marks:
+      blocks: ["dau_khan?"]                                                     # ô 10b
+    recipients_top:
+      blocks: [kinh_gui]                                                        # ô 9a
+      indent_left: 25
+    body:
+      blocks: [content]                                                         # ô 6
+    footer:
+      type: borderless_table
+      columns: [0.45, 0.55]
+      rows:
+        - [ [noi_nhan_label, "noi_nhan_item*", "ky_hieu_nguoi_soan?"],          # ô 9b, 12
+            ["quyen_han?", chuc_vu, signature_space, ho_ten] ]                  # ô 7a, 7c, 7b
+      align_rows: { noi_nhan_label: quyen_han }
+      signature_space_lines: 4
+    address_footer:
+      blocks: ["dia_chi_co_quan?"]                                              # ô 13
+
+  # --- Quy tắc cấp trang ---------------------------------------------------------
+  page_rules:
+    page_number: { position: header_center, start_at: 1, show_on_first_page: false }
+    first_page_only: [dia_chi_co_quan]
+    appendix_page_numbering: restart_per_appendix
+    landscape_allowed_for: table_sections
+
+  # --- Điều kiện ----------------------------------------------------------------
+  conditions:
+    kinh_gui_required:
+      when_any:
+        - { document_type: cong_van }
+        - { document_type_in: [to_trinh, bao_cao], sent_to: superior }
+    appendix_numbering:
+      roman_when_count_at_least: 2
+    co_quan_chu_quan:
+      omit_when: no_parent_agency
+    kinh_gui_layout:
+      same_line_when_recipients: 1
+
+  # --- Hình ảnh chữ ký và dấu (chỉ đặt vị trí nếu người dùng cung cấp ảnh) --------
+  signing_overlays:
+    chu_ky:       { format: png, transparent: true, color: blue, position: between, between: [chuc_vu, ho_ten], align: center }
+    dau_co_quan:  { format: png, transparent: true, color: red, size: actual, overlap: { target: chu_ky, ratio: 0.33, side: left } }
+
+  # --- Viết rule được nhưng chưa mô hình hóa -------------------------------------
+  planned:
+    - { id: mau_1_1,  name: Nghị quyết (cá biệt) }
+    - { id: mau_1_3,  name: Quyết định quy định gián tiếp, kèm văn bản được ban hành }
+    - { id: mau_1_6,  name: Công điện }
+    - { id: mau_1_7,  name: Giấy mời }
+    - { id: mau_1_8,  name: Giấy giới thiệu }
+    - { id: mau_1_9,  name: Biên bản }
+    - { id: mau_1_10, name: Giấy nghỉ phép }
+    - { id: ban_sao,  name: Bản sao y, sao lục, trích sao (PL I, Phần II) }
+
+# =============================================================================
+# KHUNG THEO LOẠI VĂN BẢN (PL III)
+# Phần tử của sections: tên khối layout | {fixed: chữ cố định} | {slot: chỗ người dùng điền} | {auto: hệ thống sinh}
+# =============================================================================
+document_types:
+  quyet_dinh:
+    name: Quyết định (cá biệt) quy định trực tiếp
+    abbr: QĐ
+    so_ky_hieu_pattern: co_ten_loai
+    sections:
+      - header
+      - { fixed: "QUYẾT ĐỊNH", style: ten_loai }
+      - { slot: trich_yeu, style: trich_yeu, prefix: "Về việc " }
+      - { slot: tham_quyen_ban_hanh, style: ten_loai }
+      - { slot: can_cu, style: can_cu, repeat: true, item_prefix: "Căn cứ " }
+      - { slot: theo_de_nghi, style: can_cu, item_prefix: "Theo đề nghị của ", optional: true }
+      - { fixed: "QUYẾT ĐỊNH:", style: ten_loai }
+      - { slot: noi_dung, content_structure: chuong_dieu, roots_override: [dieu] }
+      - footer
+    noi_nhan_defaults: ["Như Điều ...;"]
+
+  van_ban_co_ten_loai:
+    name: Văn bản có tên loại
+    so_ky_hieu_pattern: co_ten_loai
+    variants:
+      chi_thi:      { ten_loai: "CHỈ THỊ",      abbr: CT }
+      quy_che:      { ten_loai: "QUY CHẾ",      abbr: QC }
+      quy_dinh:     { ten_loai: "QUY ĐỊNH",     abbr: QyĐ }
+      thong_bao:    { ten_loai: "THÔNG BÁO",    abbr: TB }
+      huong_dan:    { ten_loai: "HƯỚNG DẪN",    abbr: HD }
+      chuong_trinh: { ten_loai: "CHƯƠNG TRÌNH", abbr: CTr }
+      ke_hoach:     { ten_loai: "KẾ HOẠCH",     abbr: KH }
+      phuong_an:    { ten_loai: "PHƯƠNG ÁN",    abbr: PA }
+      de_an:        { ten_loai: "ĐỀ ÁN",        abbr: ĐA }
+      du_an:        { ten_loai: "DỰ ÁN",        abbr: DA }
+      bao_cao:      { ten_loai: "BÁO CÁO",      abbr: BC }
+      to_trinh:     { ten_loai: "TỜ TRÌNH",     abbr: TTr }
+    sections:
+      - header
+      - { slot: ten_loai, style: ten_loai }
+      - { slot: trich_yeu, style: trich_yeu }
+      - { block: recipients_top, condition: kinh_gui_required }
+      - { slot: noi_dung, content_structure: [van_xuoi, phan_muc, chuong_dieu] }
+      - footer
+
+  cong_van:
+    name: Công văn
+    abbr: null
+    so_ky_hieu_pattern: cong_van
+    sections:
+      - header
+      - { block: recipients_top }
+      - { slot: noi_dung, content_structure: van_xuoi }
+      - footer
+      - address_footer
+    noi_nhan_defaults: ["Như trên;"]
+
+  phu_luc:
+    name: Phụ lục văn bản hành chính giấy
+    attach_to: any
+    sections:
+      - { auto: so_thu_tu, style: phu_luc_label, condition: appendix_numbering }
+      - { slot: tieu_de, style: phu_luc_title }
+      - { auto: chi_dan, style: phu_luc_chi_dan }
+      - { slot: noi_dung, content_structure: [van_xuoi, phan_muc] }
+
+# =============================================================================
+# BẬC 3 - UNRULED
+# =============================================================================
+unruled:
+
+  # Chuyển sang kiểm tra nội dung bằng LLM (UC-A04 đề xuất thành tiêu chí, UC-A05/UC-A07 kiểm tra).
+  # applies_to: vai trò hoặc slot mà LLM cần đọc.
+  # check_at: template (kiểm tra hằng số cơ quan lúc tạo mẫu) | draft (kiểm tra nội dung người điền).
+  semantic_criteria:
+    - id: ten_co_quan_chinh_thuc
+      applies_to: [co_quan_ban_hanh, co_quan_chu_quan]
+      check_at: template
+      criterion: Tên cơ quan ban hành là tên chính thức, đầy đủ; tên cơ quan chủ quản chỉ viết tắt những cụm từ thông dụng.
+    - id: dia_danh_chinh_thuc
+      applies_to: [dia_danh_ngay]
+      check_at: template
+      criterion: Địa danh là tên gọi chính thức của tỉnh hoặc đơn vị hành chính nơi cơ quan đóng trụ sở; đơn vị đặt theo tên người, chữ số hoặc sự kiện lịch sử phải ghi đầy đủ.
+    - id: trich_yeu_khai_quat
+      applies_to: [trich_yeu, trich_yeu_cong_van]
+      check_at: draft
+      criterion: Trích yếu là một câu ngắn gọn hoặc cụm từ phản ánh khái quát nội dung chủ yếu của văn bản.
+    - id: can_cu_day_du
+      applies_to: [can_cu]
+      check_at: draft
+      criterion: Mỗi căn cứ ghi đầy đủ tên loại, số, ký hiệu, cơ quan ban hành, ngày ban hành và trích yếu; riêng Luật, Pháp lệnh không ghi số, ký hiệu, cơ quan ban hành.
+    - id: vien_dan_lan_dau
+      applies_to: [noi_dung]
+      check_at: draft
+      criterion: Lần đầu viện dẫn văn bản phải ghi đầy đủ tên loại, số ký hiệu, thời gian, cơ quan ban hành, trích yếu; các lần sau chỉ ghi tên loại và số ký hiệu.
+    - id: chi_dan_phu_luc
+      applies_to: [noi_dung]
+      check_at: draft
+      criterion: Văn bản có phụ lục kèm theo thì trong nội dung phải có chỉ dẫn về phụ lục đó.
+    - id: chuc_vu_chinh_thuc
+      applies_to: [chuc_vu]
+      check_at: template
+      criterion: Chức vụ là chức vụ lãnh đạo chính thức của người ký; không ghi chức vụ mà Nhà nước không quy định.
+    - id: quyen_han_phu_hop
+      applies_to: [quyen_han, chuc_vu]
+      check_at: template
+      criterion: Chữ viết tắt quyền hạn (TM., Q., KT., TL., TUQ.) phù hợp với quan hệ giữa người ký và người đứng đầu hoặc tập thể lãnh đạo.
+    - id: ho_ten_khong_hoc_ham
+      applies_to: [ho_ten]
+      check_at: draft
+      criterion: Trước họ tên người ký không ghi học hàm, học vị, danh hiệu, trừ đơn vị lực lượng vũ trang và tổ chức sự nghiệp giáo dục, y tế, khoa học theo quy định của ngành.
+    - id: viet_tat_co_quan
+      applies_to: [so_ky_hieu]
+      check_at: template
+      criterion: Chữ viết tắt tên cơ quan, đơn vị trong ký hiệu bảo đảm ngắn gọn, dễ hiểu.
+    - id: viet_hoa
+      applies_to: [noi_dung, trich_yeu, kinh_gui, noi_nhan_item]
+      check_at: draft
+      criterion: Viết hoa đúng quy tắc của Phụ lục II (vì phép đặt câu, tên người, tên địa lý, tên cơ quan tổ chức, các trường hợp khác).
+
+  # Không kiểm tra tự động được: hiển thị như danh sách tự kiểm tra cho người dùng.
+  manual_checks:
+    - id: so_van_ban_theo_dang_ky
+      note: Số văn bản là số thứ tự đăng ký tại Văn thư trong năm; tổ chức tư vấn dùng con dấu cơ quan phải có hệ thống số riêng.
+    - id: dia_danh_luc_luong_vu_trang
+      note: Địa danh trên văn bản của đơn vị thuộc Bộ Công an, Bộ Quốc phòng theo quy định riêng của hai Bộ.
+    - id: dau_do_mat
+      note: Xác định và đóng dấu độ mật, dấu thu hồi theo pháp luật về bảo vệ bí mật nhà nước.
+    - id: muc_do_khan
+      note: Mức độ khẩn do người ký quyết định theo đề xuất của đơn vị soạn thảo.
+    - id: chu_ky_so
+      note: Chữ ký số của người có thẩm quyền và của cơ quan, gồm vị trí và thông tin thời gian ký theo ISO 8601, do phần mềm ký số tạo.
+    - id: chuc_danh_to_chuc_tu_van
+      note: Tổ chức tư vấn ghi chức danh trong tổ chức tư vấn, kèm chức vụ trong cơ quan nếu được dùng con dấu của cơ quan.
+
+# =============================================================================
+# EVIDENCE - nguồn gốc giá trị
+# Khóa: đường dẫn tới giá trị trong file. Một khóa áp dụng cho mọi giá trị con của nó;
+#       khóa cụ thể hơn được ưu tiên ("core.styles.quoc_hieu.size" thắng "core.styles.quoc_hieu").
+# Trường:
+#   kind          regulation | interpretation | convention | docx | manual | not_specified
+#   ref           { section, page }  vị trí theo cấu trúc văn bản; tối thiểu phải có section
+#   quote         câu trích nguyên văn, null nếu chỉ xác định được section
+#   locator       sentence | paragraph | section  độ chính xác của vị trí
+#   confidence    0..1; người viết tay để 1.0
+#   extracted_by  human | llm:<tên model>
+#   review        unreviewed | accepted | edited  (trạng thái trên màn hình review UC-A01)
+# =============================================================================
+evidence:
+  core.page.size:
+    kind: regulation
+    ref: { section: "PL I, I.1", page: 21 }
+    quote: "Khổ giấy: Khổ A4 (210 mm x 297 mm)."
+    locator: sentence
+    confidence: 1.0
+    extracted_by: human
+    review: accepted
+  core.page.orientation:
+    kind: regulation
+    ref: { section: "PL I, I.2", page: 21 }
+    quote: null
+    locator: section
+    confidence: 1.0
+    extracted_by: human
+    review: accepted
+  core.page.margin_allowed:
+    kind: regulation
+    ref: { section: "PL I, I.3", page: 21 }
+    quote: "Định lề trang: Cách mép trên và mép dưới 20 - 25 mm, cách mép trái 30 - 35 mm, cách mép phải 15 - 20 mm."
+    locator: sentence
+    confidence: 1.0
+    extracted_by: human
+    review: accepted
+  core.page.margin:
+    kind: convention
+    ref: { section: "PL I, I.3", page: 21 }
+    quote: null
+    locator: section
+    confidence: 1.0
+    extracted_by: human
+    review: accepted
+  core.font:
+    kind: regulation
+    ref: { section: "PL I, I.4", page: 21 }
+    quote: "Phông chữ: Phông chữ tiếng Việt Times New Roman, bộ mã ký tự Unicode theo Tiêu chuẩn Việt Nam TCVN 6909:2001, màu đen."
+    locator: sentence
+    confidence: 1.0
+    extracted_by: human
+    review: accepted
+  core.styles.so_trang:
+    kind: regulation
+    ref: { section: "PL I, I.7", page: 21 }
+    quote: "Số trang văn bản: Được đánh từ số 1, bằng chữ số Ả Rập, cỡ chữ 13 đến 14, kiểu chữ đứng, được đặt canh giữa theo chiều ngang trong phần lề trên của văn bản, không hiển thị số trang thứ nhất."
+    locator: sentence
+    confidence: 1.0
+    extracted_by: human
+    review: accepted
+  core.styles.quoc_hieu:
+    kind: regulation
+    ref: { section: "PL I, II.1.a", page: 21 }
+    quote: "Quốc hiệu “CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM”: Được trình bày bằng chữ in hoa, cỡ chữ từ 12 đến 13, kiểu chữ đứng, đậm và ở phía trên cùng, bên phải trang đầu tiên của văn bản."
+    locator: sentence
+    confidence: 1.0
+    extracted_by: human
+    review: accepted
+  core.styles.tieu_ngu:              { kind: regulation, ref: { section: "PL I, II.1.b", page: 21 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  core.styles.co_quan_chu_quan:      { kind: regulation, ref: { section: "PL I, II.2.b", page: 22 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  core.styles.co_quan_ban_hanh:      { kind: regulation, ref: { section: "PL I, II.2.b", page: 22 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  core.styles.so_ky_hieu:            { kind: regulation, ref: { section: "PL I, II.3.c", page: 23 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  core.styles.dia_danh_ngay:         { kind: regulation, ref: { section: "PL I, II.4.c", page: 23 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  core.styles.ten_loai:              { kind: regulation, ref: { section: "PL I, II.5.b", page: 24 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  core.styles.trich_yeu:             { kind: regulation, ref: { section: "PL I, II.5.b", page: 24 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  core.styles.trich_yeu_cong_van:    { kind: regulation, ref: { section: "PL I, II.5.b đoạn 2", page: 24 }, locator: paragraph, confidence: 1.0, extracted_by: human, review: accepted }
+  core.styles.can_cu:                { kind: regulation, ref: { section: "PL I, II.6.a", page: 24 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  core.styles.body:
+    kind: regulation
+    ref: { section: "PL I, II.6.e", page: 25 }
+    quote: "Nội dung văn bản được trình bày bằng chữ in thường, được canh đều cả hai lề, kiểu chữ đứng; cỡ chữ từ 13 đến 14; khi xuống dòng, chữ đầu dòng lùi vào 1 cm hoặc 1,27 cm; khoảng cách giữa các đoạn văn tối thiểu là 6pt; khoảng cách giữa các dòng tối thiểu là dòng đơn, tối đa là 1,5 lines."
+    locator: sentence
+    confidence: 1.0
+    extracted_by: human
+    review: accepted
+  core.styles.body.line_spacing:     { kind: convention, ref: { section: "PL I, II.6.e", page: 25 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  core.styles.phan_label:            { kind: regulation, ref: { section: "PL I, II.6.đ", page: 25 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  core.styles.muc_la_ma:             { kind: regulation, ref: { section: "PL I, V STT 6.b", page: 33 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  core.styles.kinh_gui:              { kind: regulation, ref: { section: "PL I, II.9.d đoạn 2", page: 28 }, locator: paragraph, confidence: 1.0, extracted_by: human, review: accepted }
+  core.styles.noi_nhan_label:        { kind: regulation, ref: { section: "PL I, II.9.d đoạn 3", page: 28 }, locator: paragraph, confidence: 1.0, extracted_by: human, review: accepted }
+  core.styles.noi_nhan_item:         { kind: regulation, ref: { section: "PL I, II.9.d đoạn 3", page: 28 }, locator: paragraph, confidence: 1.0, extracted_by: human, review: accepted }
+  core.styles.quyen_han:             { kind: regulation, ref: { section: "PL I, II.7.đ", page: 26 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  core.styles.chuc_vu:               { kind: regulation, ref: { section: "PL I, II.7.đ", page: 26 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  core.styles.ho_ten:                { kind: regulation, ref: { section: "PL I, II.7 (tiếp)", page: 27 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+
+  advanced.styles.phu_luc_label:     { kind: regulation, ref: { section: "PL I, III.1.b", page: 28 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  advanced.styles.phu_luc_title:     { kind: regulation, ref: { section: "PL I, III.1.b", page: 28 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  advanced.styles.phu_luc_chi_dan:   { kind: regulation, ref: { section: "PL I, III.1.c", page: 28 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  advanced.styles.dau_khan:          { kind: regulation, ref: { section: "PL I, III.2.b", page: 29 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  advanced.styles.pham_vi_luu_hanh:  { kind: regulation, ref: { section: "PL I, III.2.c", page: 30 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  advanced.styles.ky_hieu_nguoi_soan: { kind: regulation, ref: { section: "PL I, III.3", page: 30 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  advanced.styles.dia_chi_co_quan:   { kind: regulation, ref: { section: "PL I, III.4", page: 30 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+
+  advanced.constraints.size_consistency:
+    kind: interpretation
+    ref: { section: "PL I, V, chú thích 1", page: 32 }
+    quote: "Cỡ chữ trong cùng một văn bản tăng, giảm phải thống nhất"
+    locator: sentence
+    confidence: 0.8
+    extracted_by: human
+    review: accepted
+  advanced.decorations:              { kind: regulation, ref: { section: "PL I, II.1.b, II.2.b, II.5.b, III.4", page: 21 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  advanced.text_rules:               { kind: regulation, ref: { section: "PL I, II.3.c, II.6.a, II.9.d; PL III Mẫu 1.1-1.5", page: 23 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  advanced.patterns.so_ky_hieu:      { kind: regulation, ref: { section: "PL I, II.3; PL III Mẫu 1.2, 1.4, 1.5", page: 22 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  advanced.patterns.dia_danh_ngay:
+    kind: regulation
+    ref: { section: "PL I, II.4.b", page: 23 }
+    quote: "đối với những số thể hiện ngày nhỏ hơn 10 và tháng 1, 2 phải ghi thêm số 0 phía trước."
+    locator: sentence
+    confidence: 1.0
+    extracted_by: human
+    review: accepted
+  advanced.numbering.sequences.vn_alpha:
+    kind: interpretation
+    ref: { section: "PL I, II.6.đ", page: 25 }
+    quote: null
+    locator: section
+    confidence: 0.7
+    extracted_by: human
+    review: accepted
+  advanced.content_structures:       { kind: regulation, ref: { section: "PL I, II.6.c-đ; V STT 6", page: 24 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  advanced.layout:                   { kind: regulation, ref: { section: "PL I, IV.2 (sơ đồ)", page: 31 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  advanced.layout.header.columns:    { kind: convention, ref: { section: "PL I, IV.2", page: 31 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  advanced.layout.footer.columns:    { kind: convention, ref: { section: "PL I, IV.2", page: 31 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  advanced.layout.title.space_before: { kind: convention, ref: { section: "PL I, IV.2", page: 31 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  advanced.layout.recipients_top.indent_left: { kind: convention, ref: { section: "PL III Mẫu 1.5", page: 48 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  advanced.layout.footer.signature_space_lines: { kind: convention, ref: { section: "PL I, IV.2", page: 31 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  advanced.page_rules:               { kind: regulation, ref: { section: "PL I, I.2, I.7, III.1.đ, III.4", page: 21 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  advanced.conditions:               { kind: regulation, ref: { section: "PL I, II.2.a, II.9.b, II.9.d, III.1.a", page: 22 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  advanced.signing_overlays:         { kind: regulation, ref: { section: "PL I, II.7.d, II.8.a", page: 26 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+
+  document_types.quyet_dinh:         { kind: regulation, ref: { section: "PL III, Mẫu 1.2", page: 43 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  document_types.van_ban_co_ten_loai: { kind: regulation, ref: { section: "PL III, Mẫu 1.4; bảng viết tắt", page: 47 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  document_types.cong_van:           { kind: regulation, ref: { section: "PL III, Mẫu 1.5", page: 48 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  document_types.phu_luc:            { kind: regulation, ref: { section: "PL III, Mẫu 2.1", page: 54 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+
+  unruled.semantic_criteria:         { kind: regulation, ref: { section: "PL I, II.2.a, II.3.b, II.4.a, II.5.a, II.6.a-b, II.7.b-c, III.1.a; PL II", page: 22 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }
+  unruled.manual_checks:             { kind: regulation, ref: { section: "PL I, II.3.a, II.4.a, II.7.c-d, II.8.b, III.2.a-b", page: 22 }, locator: section, confidence: 1.0, extracted_by: human, review: accepted }

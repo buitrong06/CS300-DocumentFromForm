@@ -1,0 +1,22 @@
+digraph Context {
+  graph [label="C4 LEVEL 1  |  System Context Diagram\nDocument: Fill and Deliver  •  CS300 PA02", labelloc=t, fontsize=27, fontname="DejaVu Sans", fontcolor="#19334f", bgcolor="#ffffff", rankdir=TB, splines=polyline, nodesep=1.0, ranksep=1.18, pad=0.40, outputorder=edgesfirst];
+  node [shape=box, style="rounded,filled", fontname="DejaVu Sans", fontsize=14, margin="0.24,0.20", color="#99b2c7", penwidth=1.5, fontcolor="#19334f"];
+  edge [fontname="DejaVu Sans", fontsize=12, color="#58758e", fontcolor="#526982", arrowsize=0.86, penwidth=1.55];
+
+  assigner [label=<<B>Assigner</B><BR/><FONT POINT-SIZE="11">[Person / contextual role]</FONT><BR/><FONT POINT-SIZE="11">Creates templates, assigns tasks,</FONT><BR/><FONT POINT-SIZE="11">reviews submissions</FONT>>, fillcolor="#e1f0fa", color="#7aa6ca"];
+  assignee [label=<<B>Assignee</B><BR/><FONT POINT-SIZE="11">[Person / contextual role]</FONT><BR/><FONT POINT-SIZE="11">Fills forms, submits snapshots,</FONT><BR/><FONT POINT-SIZE="11">delegates selected fields</FONT>>, fillcolor="#e1f0fa", color="#7aa6ca"];
+  individual [label=<<B>Personal Document User</B><BR/><FONT POINT-SIZE="11">[Person]</FONT><BR/><FONT POINT-SIZE="11">Prepares, checks and exports</FONT><BR/><FONT POINT-SIZE="11">documents independently</FONT>>, fillcolor="#e1f0fa", color="#7aa6ca"];
+  app [label=<<B>Document: Fill and Deliver</B><BR/><FONT POINT-SIZE="13">[Software System]</FONT><BR/><FONT POINT-SIZE="12">Template-driven document creation and form filling</FONT><BR/><FONT POINT-SIZE="12">Task assignment, partial delegation, submission and review</FONT><BR/><FONT POINT-SIZE="12">DOCX/PDF preview, export and content verification</FONT>>, fillcolor="#275b8c", color="#194975", fontcolor="white", fontsize=21, margin="0.50,0.35", penwidth=2];
+  firebase [label=<<B>Firebase Authentication</B><BR/><FONT POINT-SIZE="11">[External Software System]</FONT><BR/><FONT POINT-SIZE="11">Signs in users and supplies ID tokens</FONT>>, fillcolor="#eee9f8", color="#a18aca"];
+  ollama [label=<<B>Ollama Inference API</B><BR/><FONT POINT-SIZE="11">[External Software System — optional]</FONT><BR/><FONT POINT-SIZE="11">Provides advisory semantic checks</FONT><BR/><FONT POINT-SIZE="11">without rewriting user text</FONT>>, fillcolor="#eee9f8", color="#a18aca"];
+
+  {rank=same; assigner; assignee; individual}
+  assigner -> assignee [style=invis, weight=30]; assignee -> individual [style=invis, weight=30];
+  assigner -> app [label="Creates and assigns\ntemplate-based work", color="#2d78aa", fontcolor="#28618d"];
+  assignee -> app [label="Completes assignments,\nsubmits and delegates", color="#2d78aa", fontcolor="#28618d"];
+  individual -> app [label="Creates personal\ndocuments", color="#2d78aa", fontcolor="#28618d"];
+  app -> firebase [label="Authenticates users /\nverifies ID tokens", color="#9578c0", fontcolor="#795b9f"];
+  app -> ollama [label="Requests semantic feedback\n[optional HTTPS]", style=dashed, color="#9578c0", fontcolor="#795b9f"];
+  {rank=same; firebase; ollama}
+  firebase -> ollama [style=invis, weight=25];
+}
