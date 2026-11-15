@@ -22,20 +22,44 @@
 
 ![Backend modules](../04_C3_Backend_Component/C3_Backend_Component.png)
 
+![Frontend modules](../05_C3_Frontend_Component/C3_Frontend_Component.png)
+
 The backend is **one deployable application with separate domain modules**. Domain modules do not imply individually deployed microservices. The document renderer may run through a controlled subprocess or worker if needed.
+
+The frontend is presented as a web application.
 
 ## 2. Components and responsibilities
 
+### Backend components
+
 | Component | Responsibility | Dependencies |
 |---|---|---|
-| Authentication & Authorization | Verify identity; enforce workspace, task, document and field-level access rights | Firebase Auth, PostgreSQL |
-| Preset & Template Management | Import DOCX, preserve style/structure, detect and review fields, configure formatting presets and checklists, publish templates | PostgreSQL, object storage, document parser |
-| Document & Draft Management | Generate typed forms, handle autosave, persist editable drafts, support personal documents, request preview/export | PostgreSQL, document renderer |
+| API Endpoint | Provide an endpoint for clients to connect into | FastAPI router 
+| Identify & Access Policy | Verify identity; enforce workspace, task, document and field-level access rights | Firebase Auth, PostgreSQL |
+| Preset & Template | Import DOCX, preserve style/structure, detect and review fields, configure formatting presets and checklists, publish templates | PostgreSQL, object storage, document parser |
+| Document & Draft | Generate typed forms, handle autosave, persist editable drafts, support personal documents, request preview/export | PostgreSQL, document renderer |
 | Task & Delegation | Create tasks and independent per-recipient assignments; delegate nonempty field subsets into internal workspace subtasks | PostgreSQL, authorization |
 | Submission & Review | Create immutable submission snapshots, track feedback/approvals and manually apply authorized child fields into a parent draft with version/provenance checks | PostgreSQL transactions, object storage |
 | Verification | Execute deterministic field checks; optionally call LLM for evidence-backed advisory findings | Rule engine, external LLM API |
 | Document Processing Engine | Parse/modify DOCX at field anchors; generate DOCX and authoritative PDF; provide rendered preview | python-docx, docxtpl, lxml, LibreOffice |
 | Discussion & Notification | Record task-scoped communication, progress events and reminders (if enabled) | PostgreSQL, REST/WebSocket, optional scheduler |
+| Persistance & File Gateways | Provide an endpoint for components to communicate with the data | SQLAlchemy
+
+### Frontend component
+
+| Component | Responsibility | Dependencies |
+| --- | --- | --- |
+| App shell & Routing | Handle user navigation, determine component layout, guard against unauthorized access| React Router |
+| Session UI| Aquisition of tokens, account sign-in / sign-out  with Firebase | Firebase SDK |
+| Preset / Template builder| Sample document upload, user's review and setup of field in term of position, content, description and constraints. | React |
+| Guided Form Editor| Guide user toward form completion via filling fields while providing instructions. Autosave for partially completed documents | React Hook Form, Tiptap|
+| Live Preview| Optional component. Display preview of rendered PDF| PDF.js |
+| Task & Delegation UI| Let users assign and delegate tasks to other users, partially or fully, if they have the persmission to do so. Track the assigned and delegated tasks' progress | None |
+| Submission & Review | Create immutable snapshot and reutrn to sender. Senders review the received submission, review and accept or reject with revision| Task & Delegation |
+| Discussion & Notification | Users discuss and comment about their tasks and the document. Notify the users when they receive new task and announcements | None |
+| Local Draft Cache| Local cache of documents | IndexDB, Dexie |
+| API / Realtime client| Make requests to the server, subcribe to the events | WebSocket, TanStack query|
+
 
 ## 3. Core interaction flows
 
