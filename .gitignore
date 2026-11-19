@@ -15,6 +15,7 @@ venv/
 .ruff_cache/
 htmlcov/
 .coverage
+*.egg-info/
 
 # Node / Frontend
 node_modules/
