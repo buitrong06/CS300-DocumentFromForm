@@ -350,6 +350,8 @@ erDiagram
         bigint target_template_field_id FK "-> template_fields.id"
         int parent_draft_version_before
         int parent_draft_version_after
+        jsonb value_before "nullable previous field value"
+        jsonb value_after "applied field value"
         text apply_mode "direct | combine | rewrite"
         bigint applied_by FK "-> users.id"
         timestamptz applied_at
@@ -383,10 +385,10 @@ erDiagram
 | :--- | :--- | :--- |
 | **`submissions`** | `id` (PK), `public_code` (UK, NOT NULL), `task_id` (FK), `assignment_id` (FK), `submitted_by` (FK), `template_id` (FK), `source_draft_version`, `field_values_snapshot` (`jsonb`), `verification_summary` (`jsonb`), `created_at`, `UNIQUE (assignment_id, id)`, composite FK `(assignment_id, task_id, submitted_by) → task_assignments (id, task_id, assignee_id)`, composite FK `(task_id, template_id) → tasks (id, template_id)` | **Strictly Immutable (`I1`)**: Captures a point-in-time snapshot when an Assignee clicks Submit (`UC-B04`). No `updated_at` column exists; rows are never mutated after insert, and the underlying `document_drafts` row remains unlocked. The snapshot contains only the fields the Assignee was authorized to edit. The composite FKs make the database reject a Submission whose Task, Assignment, submitter or Template disagree. Exported files are recorded in `render_snapshots`, never on this row. |
 | **`submission_reviews`** | `id` (PK), `submission_id` (UK, FK → `submissions.id`), `assignment_id` (FK → `task_assignments.id`), `reviewer_id` (FK → `users.id`), `decision` (`approved` \| `revision_requested`), `feedback`, `created_at`, composite FK `(assignment_id, submission_id) → submissions (assignment_id, id)` | Each Submission receives at most one decision (`UC-B05`) and always binds to a specific `submission_id`, never to the live `DocumentDraft`. Only the assignment's `latest_submission_id` may be reviewed (§5.2). Approving a child submission updates the child `task_assignments.status` but never auto-submits or approves the Parent Task (`I2`). |
-| **`field_apply_logs`** | `id` (PK), `parent_draft_id` (FK → `document_drafts.id`), `target_template_field_id` (FK → `template_fields.id`), `parent_draft_version_before` (`int`), `parent_draft_version_after` (`int`), `apply_mode` (`direct` \| `combine` \| `rewrite`), `applied_by` (FK → `users.id`), `applied_at` | Append-only record whenever a Parent Assignee applies delegated results into a Parent `DocumentDraft` field (`UC-B06`, `I3`). |
+| **`field_apply_logs`** | `id` (PK), `parent_draft_id` (FK → `document_drafts.id`), `target_template_field_id` (FK → `template_fields.id`), `parent_draft_version_before` (`int`), `parent_draft_version_after` (`int`), `value_before` (`jsonb`, nullable), `value_after` (`jsonb`), `apply_mode` (`direct` \| `combine` \| `rewrite`), `applied_by` (FK → `users.id`), `applied_at` | Append-only record whenever a Parent Assignee applies delegated results into a Parent `DocumentDraft` field (`UC-B06`, `I3`), preserving before/after field values for diff history. |
 | **`field_apply_sources`** | `apply_log_id` (FK → `field_apply_logs.id` ON DELETE CASCADE), `source_submission_id` (FK → `submissions.id`), `PRIMARY KEY (apply_log_id, source_submission_id)` | Links each `field_apply_logs` entry to one or more source Child Submissions (supporting `direct`, `combine`, and `rewrite`). Backend transaction verifies each source belongs to a Subtask of the Parent Assignment and contains the target field. |
 | **`task_comments`** | `id` (PK), `task_id` (FK → `tasks.id`), `submission_id` (nullable FK → `submissions.id`), `author_id` (FK → `users.id`), `body` (NOT NULL), `created_at` | Task-scoped discussion messages (`UC-B07`), isolated within the task's workspace and authorized participants. |
-| **`activity_events`** | `id` (PK), `workspace_id` (nullable FK → `workspaces.id`), `task_id` (nullable FK → `tasks.id`), `actor_id` (FK → `users.id`), `event_type` (`text`), `entity_type` (`text`), `entity_id` (`bigint`), `payload` (`jsonb`), `occurred_at` (`timestamptz`) | Append-only business audit trail (`TaskAssigned`, `SubmissionCreated`, `SubmissionReviewed`, `FieldApplied`, `TaskCancelled`, per `COMMUNICATION_DOMAIN.md §10`). Covers lifecycle audit and activity feeds only—not keystroke edits or application logs. |
+| **`activity_events`** | `id` (PK), `workspace_id` (nullable FK → `workspaces.id`), `task_id` (nullable FK → `tasks.id`), `actor_id` (FK → `users.id`), `event_type` (`text`), `entity_type` (`text`), `entity_id` (`bigint`), `payload` (`jsonb`), `occurred_at` (`timestamptz`) | Append-only business audit trail (`TaskAssigned`, `SubmissionCreated`, `SubmissionReviewed`, `FieldApplied`, `TaskCancelled`, per `COMMUNICATION_DOMAIN.md §8.4`). Covers lifecycle audit and activity feeds only—not keystroke edits or application logs. |
 
 ---
 
@@ -399,7 +401,7 @@ erDiagram
    - `task_assignments (assignee_id, status, updated_at desc)` — Assignee task list (`UC-B02`).
    - `submissions (assignment_id, created_at desc)` — Per-recipient submission history (`UC-B05`).
    - `task_comments (task_id, created_at asc)` — Task discussion feed (`UC-B07`).
-   - `activity_events (task_id, occurred_at desc)` & `(workspace_id, occurred_at desc)` — Task/workspace audit timeline (`COMMUNICATION_DOMAIN.md §10`).
+   - `activity_events (task_id, occurred_at desc)` & `(workspace_id, occurred_at desc)` — Task/workspace audit timeline (`COMMUNICATION_DOMAIN.md §8.4`).
 3. **Partial Indexes**:
    - `document_drafts (owner_id, updated_at desc) WHERE is_personal = true AND deleted_at IS NULL` — Personal document library (`UC-C03`).
    - `tasks (parent_assignment_id) WHERE parent_assignment_id IS NOT NULL` — Fast lookup of delegated Subtasks for a Parent Assignment (`UC-B03`, `UC-B06`).

@@ -2,12 +2,12 @@
 
 Canonical vocabulary for **Document: Fill and Deliver**. Always use these exact terms in code, schemas, API contracts, tests, and docs. Do not introduce synonyms (e.g., avoid mixing "Form", "Template", and "Blueprint" interchangeably).
 
-> Note: Several preset/template and communication terms below are marked **[Needs P0 spec]** per `docs/MISSING_CONTEXT.md`. Refine definitions in `docs/analysis-and-design/PRESET_DOMAIN.md` or `docs/management/DECISIONS.md` as slices are implemented.
+> Authoritative domain specifications live in [`docs/analysis-and-design/PRESET_DOMAIN.md`](docs/analysis-and-design/PRESET_DOMAIN.md), [`docs/analysis-and-design/COMMUNICATION_DOMAIN.md`](docs/analysis-and-design/COMMUNICATION_DOMAIN.md), and [`docs/analysis-and-design/database-overview.md`](docs/analysis-and-design/database-overview.md).
 
 ## Document & Template Domain
 
-- **FormattingPreset** *(Needs P0 spec)*: Reusable styling/layout rule set (margins, fonts, typography, spacing, numbering, page setup — e.g. ND30/2020) applied when rendering or validating a document.
-- **StructureBlueprint** *(Needs P0 spec)*: Logical section/hierarchy definition of a document type independent of a specific user draft.
+- **FormattingPreset**: Versioned, reusable styling/layout rule set (`core`, `advanced`, `document_types`, `unruled`, `evidence` blocks — e.g. ND30/2020) applied when rendering or validating a document (`DEC-008`).
+- **StructureBlueprint**: Logical section/hierarchy definition of a document type independent of a specific user draft (realized by the `document_types` block in `FormattingPreset` and locked structure segments in `DocumentTemplate`).
 - **DocumentTemplate**: A versioned, published template combining structure, styling/preset rules, and typed `Field` definitions from which tasks or drafts are created.
 - **Field**: A typed, addressable input unit inside a `DocumentTemplate` or `DocumentDraft` (with validation constraints and optional `Binding`).
 - **Binding**: Mapping between a `Field` and its anchor/placeholder in a source or generated DOCX structure.
