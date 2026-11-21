@@ -2,7 +2,10 @@
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; }
 button, input, textarea { font: inherit; }
-.workspace-switcher { position: fixed; z-index: 1000; right: 16px; bottom: 16px; padding: 10px 14px; border: 1px solid #0f6cbd; border-radius: 8px; background: #fff; color: #0f6cbd; box-shadow: 0 4px 16px rgb(0 0 0 / 16%); cursor: pointer; }
+.workspace-switcher { position: fixed; z-index: 1000; right: 16px; bottom: 16px; display: flex; gap: 4px; padding: 5px; border: 1px solid #0f6cbd; border-radius: 8px; background: #fff; box-shadow: 0 4px 16px rgb(0 0 0 / 16%); }
+.workspace-switcher a { padding: 7px 10px; border-radius: 5px; color: #0f6cbd; text-decoration: none; }
+.workspace-switcher a.active { background: #0f6cbd; color: #fff; }
+.route-loading { padding: 32px; }
 .docx-form-field { display: inline-block; max-width: 100%; height: 24px; margin: 0 2px; padding: 2px 4px; vertical-align: middle; border: 1px solid #7195b7; border-radius: 2px; background-color: #f8fbff; color: #173b5e; font: inherit; font-size: 13px; }
 .docx-form-field-number-cells { border-radius: 0; background-image: repeating-linear-gradient(to right, transparent 0, transparent calc(var(--slot-width, 24pt) - 1px), #91a9bf calc(var(--slot-width, 24pt) - 1px), #91a9bf var(--slot-width, 24pt)); background-size: var(--slot-width, 24pt) 100%; }
 .docx-form-field-character-cells { border-radius: 0; background-image: repeating-linear-gradient(to right, transparent 0, transparent calc(var(--slot-width, 22px) - 1px), #91a9bf calc(var(--slot-width, 22px) - 1px), #91a9bf var(--slot-width, 22px)); background-size: var(--slot-width, 22px) 100%; }

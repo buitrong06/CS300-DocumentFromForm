@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Badge, Button, Dropdown, Field, Input, Option, Textarea,
   Tooltip, makeStyles, shorthands, tokens,
@@ -6,11 +6,6 @@ import {
 import { ArrowLeftRegular, ArrowUploadRegular, CheckmarkCircleRegular, DismissCircleRegular, DocumentBulletListRegular, SaveRegular } from "@fluentui/react-icons";
 import { sourcePreview, uploadTemplate, saveGeneration } from "./api";
 import type { FieldCandidate, FieldType, FormGeneration, SampleTemplate } from "./types";
-
-const PrototypeApp = lazy(async () => {
-  const module = await import("./prototype/PrototypeApp");
-  return { default: module.PrototypeApp };
-});
 
 const SAMPLE_TEMPLATES: SampleTemplate[] = [
   { id: "mau-cc01", filename: "1604372463_Mau_CC01.docx", title: "Mẫu CC01 – Tờ khai căn cước công dân", description: "Tờ khai thông tin cá nhân theo mẫu CC01.", kind: "Tờ khai" },
@@ -51,33 +46,7 @@ const useStyles = makeStyles({
 
 const TYPE_LABELS: Record<FieldType, string> = { short_text: "Short text", long_text: "Long text", date: "Date", number: "Number", money: "Money", choice: "Choice" };
 
-export function App() {
-  const [workspaceView, setWorkspaceView] = useState<"extract" | "prototype">("extract");
-
-  if (workspaceView === "prototype") {
-    return (
-      <>
-        <button className="workspace-switcher" onClick={() => setWorkspaceView("extract")}>
-          Mở quy trình trích xuất trường
-        </button>
-        <Suspense fallback={<p>Đang tải prototype…</p>}>
-          <PrototypeApp />
-        </Suspense>
-      </>
-    );
-  }
-
-  return (
-    <>
-      <button className="workspace-switcher" onClick={() => setWorkspaceView("prototype")}>
-        Mở prototype PA02
-      </button>
-      <TemplateExtractionApp />
-    </>
-  );
-}
-
-function TemplateExtractionApp() {
+export function TemplateBuilderPage() {
   const styles = useStyles();
   const [generation, setGeneration] = useState<FormGeneration | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);

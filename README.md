@@ -34,11 +34,12 @@ A web application for Vietnamese administrative and organizational document prep
 ## Quick Start & Documentation Entrypoints
 
 1. Start with [docs/MISSING_CONTEXT.md](docs/MISSING_CONTEXT.md), [GLOSSARY.md](GLOSSARY.md), and [AGENTS.md](AGENTS.md).
-2. Review theWeek 0 setup plan in [docs/management/WEEK0_CONTRACT_FIRST_SETUP.md](docs/management/WEEK0_CONTRACT_FIRST_SETUP.md).
+2. Review the Week 0 setup plan in [docs/management/WEEK0_CONTRACT_FIRST_SETUP.md](docs/management/WEEK0_CONTRACT_FIRST_SETUP.md) and the implemented shared foundation in [docs/management/PHASE0_SHARED_FOUNDATION.md](docs/management/PHASE0_SHARED_FOUNDATION.md).
 3. Review technical specifications:
    - Architecture: [docs/architecture/c4/README.md](docs/architecture/c4/README.md)
    - Preset & Template Domain: [docs/analysis-and-design/PRESET_DOMAIN.md](docs/analysis-and-design/PRESET_DOMAIN.md)
    - Communication & Delegation Domain: [docs/analysis-and-design/COMMUNICATION_DOMAIN.md](docs/analysis-and-design/COMMUNICATION_DOMAIN.md)
    - Database ER Model: [docs/analysis-and-design/database-overview.md](docs/analysis-and-design/database-overview.md)
 4. Copy `.env.example` to `.env` for local development.
-5. Track verified slice implementation progress in [docs/management/IMPLEMENTATION_STATUS.md](docs/management/IMPLEMENTATION_STATUS.md).
+5. Start PostgreSQL with `docker compose up -d postgres`, then run `alembic upgrade head` from `apps/api/`.
+6. Track verified slice implementation progress in [docs/management/IMPLEMENTATION_STATUS.md](docs/management/IMPLEMENTATION_STATUS.md).
