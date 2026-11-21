@@ -24,6 +24,11 @@ build/
 .vite/
 coverage/
 *.local
+*.log
+*.sqlite3
+*.sqlite3-*
+*.tsbuildinfo
+.~lock.*#
 
 # Storage / Temp documents
 tmp/

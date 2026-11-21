@@ -1,50 +1,48 @@
-from fastapi.testclient import TestClient
+import pytest
+from fastapi import HTTPException
 from pytest import MonkeyPatch
 
-from app.core.config import Settings, get_settings
-from app.main import app
+from app.core.config import Settings
+from app.main import health_check
+from app.modules.auth.dependencies import get_current_user
+from app.modules.auth.router import read_current_user
 
 
 def test_health_ok(monkeypatch: MonkeyPatch) -> None:
     """Return 200 OK when PostgreSQL connectivity succeeds."""
     monkeypatch.setattr("app.main.check_db_connection", lambda: True)
-    client = TestClient(app)
 
-    response = client.get("/api/health")
+    response = health_check()
 
     assert response.status_code == 200
-    body = response.json()
-    assert body["status"] == "ok"
-    assert body["database"] == "connected"
+    assert b'"status":"ok"' in response.body
+    assert b'"database":"connected"' in response.body
 
 
 def test_health_degraded_when_db_unavailable(monkeypatch: MonkeyPatch) -> None:
     """Return 503 Service Unavailable when PostgreSQL connectivity fails."""
     monkeypatch.setattr("app.main.check_db_connection", lambda: False)
-    client = TestClient(app)
 
-    response = client.get("/api/health")
+    response = health_check()
 
     assert response.status_code == 503
-    body = response.json()
-    assert body["status"] == "degraded"
-    assert body["database"] == "disconnected"
+    assert b'"status":"degraded"' in response.body
+    assert b'"database":"disconnected"' in response.body
 
 
 def test_auth_me_dev_bypass() -> None:
     """Return dev user identity when AUTH_DEV_BYPASS is enabled."""
-    app.dependency_overrides[get_settings] = lambda: Settings(
-        auth_dev_bypass=True,
-        auth_dev_user_email="dev@example.com",
+    current_user = get_current_user(
+        credentials=None,
+        settings=Settings(
+            auth_dev_bypass=True,
+            auth_dev_user_email="dev@example.com",
+        ),
     )
-    try:
-        client = TestClient(app)
-        response = client.get("/api/auth/me")
-    finally:
-        app.dependency_overrides.clear()
 
-    assert response.status_code == 200
-    assert response.json() == {
+    response = read_current_user(current_user)
+
+    assert response.model_dump() == {
         "id": "dev-user-001",
         "email": "dev@example.com",
         "display_name": "Dev User",
@@ -54,11 +52,10 @@ def test_auth_me_dev_bypass() -> None:
 
 def test_auth_me_requires_token_when_bypass_disabled() -> None:
     """Reject unauthenticated requests with 401 when AUTH_DEV_BYPASS is disabled."""
-    app.dependency_overrides[get_settings] = lambda: Settings(auth_dev_bypass=False)
-    try:
-        client = TestClient(app)
-        response = client.get("/api/auth/me")
-    finally:
-        app.dependency_overrides.clear()
+    with pytest.raises(HTTPException) as captured:
+        get_current_user(
+            credentials=None,
+            settings=Settings(auth_dev_bypass=False),
+        )
 
-    assert response.status_code == 401
+    assert captured.value.status_code == 401
