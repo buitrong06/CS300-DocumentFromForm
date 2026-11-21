@@ -37,4 +37,3 @@ export async function sourcePreview(id: string): Promise<string> {
   }
   return response.text();
 }
-
