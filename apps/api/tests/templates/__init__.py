@@ -1,0 +1,1 @@
+"""Template extraction tests."""

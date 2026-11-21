@@ -1,0 +1,21 @@
+:root { font-family: "Segoe UI", ui-sans-serif, system-ui, sans-serif; color: #242424; background: #f5f6f7; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; }
+button, input, textarea { font: inherit; }
+.workspace-switcher { position: fixed; z-index: 1000; right: 16px; bottom: 16px; padding: 10px 14px; border: 1px solid #0f6cbd; border-radius: 8px; background: #fff; color: #0f6cbd; box-shadow: 0 4px 16px rgb(0 0 0 / 16%); cursor: pointer; }
+.docx-form-field { display: inline-block; max-width: 100%; height: 24px; margin: 0 2px; padding: 2px 4px; vertical-align: middle; border: 1px solid #7195b7; border-radius: 2px; background-color: #f8fbff; color: #173b5e; font: inherit; font-size: 13px; }
+.docx-form-field-number-cells { border-radius: 0; background-image: repeating-linear-gradient(to right, transparent 0, transparent calc(var(--slot-width, 24pt) - 1px), #91a9bf calc(var(--slot-width, 24pt) - 1px), #91a9bf var(--slot-width, 24pt)); background-size: var(--slot-width, 24pt) 100%; }
+.docx-form-field-character-cells { border-radius: 0; background-image: repeating-linear-gradient(to right, transparent 0, transparent calc(var(--slot-width, 22px) - 1px), #91a9bf calc(var(--slot-width, 22px) - 1px), #91a9bf var(--slot-width, 22px)); background-size: var(--slot-width, 22px) 100%; }
+.docx-form-checkbox { width: 15px; height: 15px; margin: 0 3px; vertical-align: -2px; accent-color: #2f6fae; }
+.docx-number-grid-group { position: relative; padding: 0 !important; }
+.docx-number-grid-group .docx-form-field { width: 100% !important; max-width: 100%; height: 24px; }
+.docx-form-field-area { display: block; width: 100%; max-width: 100%; margin: 0; padding: 8px; resize: vertical; background-image: none; line-height: normal; vertical-align: top; }
+.docx-form-field::placeholder { color: #4679a8; opacity: .9; }
+.docx-form-field:focus { outline: 2px solid #81b7eb; background: #fff; }
+.docx-preview-page { position: relative; max-width: 100%; margin: 0 auto; background: #fff; box-shadow: 0 2px 10px rgb(0 0 0 / 12%); color: #111; font-family: "Times New Roman", Times, serif; font-size: 14px; line-height: 1.2; overflow-wrap: anywhere; }
+.docx-preview-paragraph { margin: 0 0 10px; white-space: pre-wrap; }
+.docx-preview-table { max-width: 100%; margin: 10px 0; border-collapse: collapse; }
+.docx-preview-table td { min-width: 0; padding: 3px 4px; vertical-align: top; border: 1px solid #666; overflow-wrap: anywhere; }
+.docx-preview-table .docx-preview-paragraph { margin: 0; }
+.docx-preview-floating { color: #111; background: #fff; }
+@media (max-width: 740px) { h1 { font-size: 24px; } }
