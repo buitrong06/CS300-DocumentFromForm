@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
-import type { FormValues, ScreenId, CorrectionSuggestion } from '../types';
+import type { FormValues } from '../../document-filling';
+import type { CorrectionSuggestion } from '../model';
+import type { PrototypeScreenId } from '../../../prototype/navigation';
 import {
   INITIAL_RULE_FINDINGS,
   INITIAL_CORRECTION_SUGGESTIONS,
-} from '../mockData';
-import { DocumentPreview } from './DocumentPreview';
+} from '../../../prototype/scenario';
+import { DocumentPreview } from '../../document-filling';
 
-interface Screen3Props {
+interface ContentCheckScreenProps {
   values: FormValues;
   onChangeValues: (updater: (prev: FormValues) => FormValues) => void;
-  onNavigate: (screen: ScreenId) => void;
+  onNavigate: (screen: PrototypeScreenId) => void;
 }
 
-export const Screen3ContentCheck: React.FC<Screen3Props> = ({
+export const ContentCheckScreen: React.FC<ContentCheckScreenProps> = ({
   values,
   onChangeValues,
   onNavigate,

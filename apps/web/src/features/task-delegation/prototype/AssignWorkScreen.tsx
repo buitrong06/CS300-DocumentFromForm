@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import type { ScreenId } from '../types';
+import type { PrototypeScreenId } from '../../../prototype/navigation';
 
-interface Screen4Props {
-  onNavigate: (screen: ScreenId) => void;
+interface AssignWorkScreenProps {
+  onNavigate: (screen: PrototypeScreenId) => void;
 }
 
 interface FormFieldItem {
@@ -12,7 +12,7 @@ interface FormFieldItem {
   isDelegatedEarlier?: boolean;
 }
 
-export const Screen4AssignWork: React.FC<Screen4Props> = ({ onNavigate }) => {
+export const AssignWorkScreen: React.FC<AssignWorkScreenProps> = ({ onNavigate }) => {
   const allFields: FormFieldItem[] = [
     { key: 'unit', label: 'Đơn vị' },
     { key: 'createDate', label: 'Ngày lập' },

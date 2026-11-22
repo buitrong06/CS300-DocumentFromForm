@@ -1,17 +1,18 @@
 import { useState } from 'react';
-import type { ScreenId, FormValues } from './types';
-import { INITIAL_FORM_VALUES } from './mockData';
+import type { PrototypeScreenId } from './navigation';
+import type { FormValues } from '../features/document-filling';
+import { INITIAL_FORM_VALUES } from './scenario';
 import { Sidebar } from './components/Sidebar';
-import { Screen1FieldConfig } from './components/Screen1FieldConfig';
-import { Screen2GuidedForm } from './components/Screen2GuidedForm';
-import { Screen3ContentCheck } from './components/Screen3ContentCheck';
-import { Screen4AssignWork } from './components/Screen4AssignWork';
-import { Screen5ReviewSubmission } from './components/Screen5ReviewSubmission';
-import { Screen6IntegrateResults } from './components/Screen6IntegrateResults';
+import { FieldConfigurationScreen } from '../features/template-authoring';
+import { GuidedFormScreen } from '../features/document-filling';
+import { ContentCheckScreen } from '../features/document-validation';
+import { AssignWorkScreen } from '../features/task-delegation';
+import { ReviewSubmissionScreen } from '../features/submission-review';
+import { IntegrateResultsScreen } from '../features/subtask-integration';
 import './styles.css';
 
 export function PrototypeApp() {
-  const [currentScreen, setCurrentScreen] = useState<ScreenId>('screen2');
+  const [currentScreen, setCurrentScreen] = useState<PrototypeScreenId>('screen2');
   const [activeNavTab, setActiveNavTab] = useState<string>('tasks');
   const [formValues, setFormValues] = useState<FormValues>(INITIAL_FORM_VALUES);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -36,30 +37,30 @@ export function PrototypeApp() {
       <div className="main-col">
         <div className="page-body">
           {currentScreen === 'screen1' && (
-            <Screen1FieldConfig onNavigate={setCurrentScreen} />
+            <FieldConfigurationScreen onNavigate={setCurrentScreen} />
           )}
           {currentScreen === 'screen2' && (
-            <Screen2GuidedForm
+            <GuidedFormScreen
               values={formValues}
               onChangeValues={setFormValues}
               onNavigate={setCurrentScreen}
             />
           )}
           {currentScreen === 'screen3' && (
-            <Screen3ContentCheck
+            <ContentCheckScreen
               values={formValues}
               onChangeValues={setFormValues}
               onNavigate={setCurrentScreen}
             />
           )}
           {currentScreen === 'screen4' && (
-            <Screen4AssignWork onNavigate={setCurrentScreen} />
+            <AssignWorkScreen onNavigate={setCurrentScreen} />
           )}
           {currentScreen === 'screen5' && (
-            <Screen5ReviewSubmission onNavigate={setCurrentScreen} />
+            <ReviewSubmissionScreen onNavigate={setCurrentScreen} />
           )}
           {currentScreen === 'screen6' && (
-            <Screen6IntegrateResults
+            <IntegrateResultsScreen
               values={formValues}
               onChangeValues={setFormValues}
               onNavigate={setCurrentScreen}

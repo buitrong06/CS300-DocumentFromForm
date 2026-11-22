@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import type { ScreenId, SubmissionSnapshot } from '../types';
-import { INITIAL_SUBMISSIONS } from '../mockData';
+import type { SubmissionSnapshot } from '../model';
+import type { PrototypeScreenId } from '../../../prototype/navigation';
+import { INITIAL_SUBMISSIONS } from '../../../prototype/scenario';
 
-interface Screen5Props {
-  onNavigate: (screen: ScreenId) => void;
+interface ReviewSubmissionScreenProps {
+  onNavigate: (screen: PrototypeScreenId) => void;
 }
 
-export const Screen5ReviewSubmission: React.FC<Screen5Props> = ({ onNavigate }) => {
+export const ReviewSubmissionScreen: React.FC<ReviewSubmissionScreenProps> = ({ onNavigate }) => {
   const [submissions, setSubmissions] = useState<SubmissionSnapshot[]>(INITIAL_SUBMISSIONS);
   const [selectedSubId, setSelectedSubId] = useState<string>('sub-2');
   const [showDiff, setShowDiff] = useState<boolean>(true);

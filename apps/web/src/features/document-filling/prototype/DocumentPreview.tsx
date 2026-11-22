@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { FormValues } from '../types';
+import type { FormValues } from '../model';
 
 interface DocumentPreviewProps {
   values: FormValues;

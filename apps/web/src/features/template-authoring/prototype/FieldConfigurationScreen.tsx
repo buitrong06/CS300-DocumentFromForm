@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import type { TemplateFieldConfig, FieldType, ScreenId } from '../types';
-import { INITIAL_TEMPLATE_FIELDS } from '../mockData';
+import type { TemplateFieldConfig, FieldType } from '../model';
+import type { PrototypeScreenId } from '../../../prototype/navigation';
+import { INITIAL_TEMPLATE_FIELDS } from '../../../prototype/scenario';
 
-interface Screen1Props {
-  onNavigate: (screen: ScreenId) => void;
+interface FieldConfigurationScreenProps {
+  onNavigate: (screen: PrototypeScreenId) => void;
 }
 
-export const Screen1FieldConfig: React.FC<Screen1Props> = ({ onNavigate }) => {
+export const FieldConfigurationScreen: React.FC<FieldConfigurationScreenProps> = ({ onNavigate }) => {
   const [fields, setFields] = useState<TemplateFieldConfig[]>(INITIAL_TEMPLATE_FIELDS);
   const [selectedFieldId, setSelectedFieldId] = useState<string>('f9');
   const [ambiguousResolved, setAmbiguousResolved] = useState(false);

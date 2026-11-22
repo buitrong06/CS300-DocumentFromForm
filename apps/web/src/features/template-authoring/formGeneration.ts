@@ -1,4 +1,4 @@
-/** Transitional extraction types owned by the Template Builder feature. */
+/** Transitional extraction types for the imported-DOCX authoring flow. */
 export type FieldType = "short_text" | "long_text" | "date" | "number" | "money" | "choice";
 export type CandidateStatus = "proposed" | "accepted" | "rejected";
 export type DetectionMethod = "marker" | "comment" | "dotted_line" | "underscore" | "empty_table_cell" | "manual" | "llm";
