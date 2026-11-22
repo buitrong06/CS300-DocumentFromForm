@@ -1,9 +1,9 @@
 import React from 'react';
-import type { ScreenId } from '../types';
+import type { PrototypeScreenId } from '../navigation';
 
 interface HeaderProps {
-  currentScreen: ScreenId;
-  onSelectScreen: (screen: ScreenId) => void;
+  currentScreen: PrototypeScreenId;
+  onSelectScreen: (screen: PrototypeScreenId) => void;
   activeNavTab: string;
   onSelectNavTab: (tab: string) => void;
 }
@@ -14,7 +14,7 @@ export const Header: React.FC<HeaderProps> = ({
   activeNavTab,
   onSelectNavTab,
 }) => {
-  const screens: { id: ScreenId; label: string; uc: string }[] = [
+  const screens: { id: PrototypeScreenId; label: string; uc: string }[] = [
     { id: 'screen1', label: 'Màn hình 1 · Cấu hình trường', uc: 'UC-A03' },
     { id: 'screen2', label: 'Màn hình 2 · Điền form & Xem trước', uc: 'UC-A06' },
     { id: 'screen3', label: 'Màn hình 3 · Kiểm tra nội dung & Gợi ý', uc: 'UC-A07, A08' },

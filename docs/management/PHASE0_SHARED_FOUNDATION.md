@@ -55,7 +55,7 @@ Contract v1 chỉ khóa shape giao tiếp, không triển khai business service 
 ## 4. Frontend boundary
 
 - `src/app/App.tsx` chỉ chứa route composition và shell.
-- Template extraction hiện tại đã chuyển vào `src/features/template-builder/`.
+- Template extraction hiện tại nằm trong `src/features/template-authoring/`.
 - HTTP transport chung nằm tại `src/shared/api/http.ts`.
 - Prototype PA02 tiếp tục là UX reference tại `src/prototype/`; không được xem là production feature implementation.
 

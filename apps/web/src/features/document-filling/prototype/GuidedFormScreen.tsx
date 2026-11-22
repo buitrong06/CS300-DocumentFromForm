@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import type { FormValues, ScreenId } from '../types';
+import type { FormValues } from '../model';
+import type { PrototypeScreenId } from '../../../prototype/navigation';
 import { DocumentPreview } from './DocumentPreview';
 
-interface Screen2Props {
+interface GuidedFormScreenProps {
   values: FormValues;
   onChangeValues: (updater: (prev: FormValues) => FormValues) => void;
-  onNavigate: (screen: ScreenId) => void;
+  onNavigate: (screen: PrototypeScreenId) => void;
 }
 
-export const Screen2GuidedForm: React.FC<Screen2Props> = ({
+export const GuidedFormScreen: React.FC<GuidedFormScreenProps> = ({
   values,
   onChangeValues,
   onNavigate,

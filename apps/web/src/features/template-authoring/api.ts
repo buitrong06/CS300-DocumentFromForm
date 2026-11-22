@@ -1,5 +1,5 @@
 import { apiJson, apiText } from "../../shared/api/http";
-import type { FormGeneration, FieldCandidate } from "./types";
+import type { FormGeneration, FieldCandidate } from "./formGeneration";
 
 export async function uploadTemplate(file: File): Promise<FormGeneration> {
   return apiJson<FormGeneration>("/api/form-generations", {
