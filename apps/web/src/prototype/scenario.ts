@@ -1,12 +1,14 @@
+import type { TemplateFieldConfig } from "../features/template-authoring";
+import type { FormValues } from "../features/document-filling";
 import type {
-  TemplateFieldConfig,
-  FormValues,
-  RuleFinding,
   CorrectionSuggestion,
-  SubmissionSnapshot,
+  RuleFinding,
+} from "../features/document-validation";
+import type { SubmissionSnapshot } from "../features/submission-review";
+import type {
   DelegatedFieldResult,
   ProvenanceLog,
-} from './types';
+} from "../features/subtask-integration";
 
 export const INITIAL_TEMPLATE_FIELDS: TemplateFieldConfig[] = [
   {

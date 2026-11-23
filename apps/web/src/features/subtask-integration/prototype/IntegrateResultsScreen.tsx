@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import type { FormValues, ScreenId, ProvenanceLog } from '../types';
-import { INITIAL_PROVENANCE_LOGS } from '../mockData';
+import type { FormValues } from '../../document-filling';
+import type { ProvenanceLog } from '../model';
+import type { PrototypeScreenId } from '../../../prototype/navigation';
+import { INITIAL_PROVENANCE_LOGS } from '../../../prototype/scenario';
 
-interface Screen6Props {
+interface IntegrateResultsScreenProps {
   values: FormValues;
   onChangeValues: (updater: (prev: FormValues) => FormValues) => void;
-  onNavigate: (screen: ScreenId) => void;
+  onNavigate: (screen: PrototypeScreenId) => void;
 }
 
-export const Screen6IntegrateResults: React.FC<Screen6Props> = ({
+export const IntegrateResultsScreen: React.FC<IntegrateResultsScreenProps> = ({
   values,
   onChangeValues,
   onNavigate,

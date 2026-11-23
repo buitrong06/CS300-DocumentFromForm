@@ -2,13 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { renderToString } from 'react-dom/server';
 import PrototypeApp from '../PrototypeApp';
 import { Header } from '../components/Header';
-import { DocumentPreview } from '../components/DocumentPreview';
-import { Screen1FieldConfig } from '../components/Screen1FieldConfig';
-import { Screen2GuidedForm } from '../components/Screen2GuidedForm';
-import { Screen3ContentCheck } from '../components/Screen3ContentCheck';
-import { Screen4AssignWork } from '../components/Screen4AssignWork';
-import { Screen5ReviewSubmission } from '../components/Screen5ReviewSubmission';
-import { Screen6IntegrateResults } from '../components/Screen6IntegrateResults';
+import { DocumentPreview, GuidedFormScreen } from '../../features/document-filling';
+import { FieldConfigurationScreen } from '../../features/template-authoring';
+import { ContentCheckScreen } from '../../features/document-validation';
+import { AssignWorkScreen } from '../../features/task-delegation';
+import { ReviewSubmissionScreen } from '../../features/submission-review';
+import { IntegrateResultsScreen } from '../../features/subtask-integration';
 import {
   INITIAL_FORM_VALUES,
   INITIAL_TEMPLATE_FIELDS,
@@ -17,7 +16,7 @@ import {
   INITIAL_SUBMISSIONS,
   INITIAL_DELEGATED_RESULTS,
   INITIAL_PROVENANCE_LOGS,
-} from '../mockData';
+} from '../scenario';
 
 describe('Document: Fill & Deliver - Frontend Prototype PA02', () => {
   it('renders the main App container without errors', () => {
@@ -45,7 +44,7 @@ describe('Document: Fill & Deliver - Frontend Prototype PA02', () => {
   });
 
   it('renders Screen 1 (UC-A03: Form Field Configuration) correctly', () => {
-    const html = renderToString(<Screen1FieldConfig onNavigate={() => {}} />);
+    const html = renderToString(<FieldConfigurationScreen onNavigate={() => {}} />);
     expect(html).toContain('Đơn xin nghỉ học');
     expect(html).toContain('Cấu hình trường');
     expect(html).toContain('Kết quả nhận diện');
@@ -57,7 +56,7 @@ describe('Document: Fill & Deliver - Frontend Prototype PA02', () => {
 
   it('renders Screen 2 (UC-A06: Guided Form Filling with Live Preview) correctly', () => {
     const html = renderToString(
-      <Screen2GuidedForm
+      <GuidedFormScreen
         values={INITIAL_FORM_VALUES}
         onChangeValues={() => {}}
         onNavigate={() => {}}
@@ -81,7 +80,7 @@ describe('Document: Fill & Deliver - Frontend Prototype PA02', () => {
 
   it('renders Screen 3 (UC-A07 & UC-A08: Content Check & Suggestions) correctly', () => {
     const html = renderToString(
-      <Screen3ContentCheck
+      <ContentCheckScreen
         values={INITIAL_FORM_VALUES}
         onChangeValues={() => {}}
         onNavigate={() => {}}
@@ -96,7 +95,7 @@ describe('Document: Fill & Deliver - Frontend Prototype PA02', () => {
   });
 
   it('renders Screen 4 (UC-B03: Assign Work from a Form) correctly', () => {
-    const html = renderToString(<Screen4AssignWork onNavigate={() => {}} />);
+    const html = renderToString(<AssignWorkScreen onNavigate={() => {}} />);
     expect(html).toContain('Giao việc từ công việc này');
     expect(html).toContain('Nội dung chương trình');
     expect(html).toContain('Dự trù kinh phí chi tiết');
@@ -107,7 +106,7 @@ describe('Document: Fill & Deliver - Frontend Prototype PA02', () => {
   });
 
   it('renders Screen 5 (UC-B05: Review a Submission) correctly', () => {
-    const html = renderToString(<Screen5ReviewSubmission onNavigate={() => {}} />);
+    const html = renderToString(<ReviewSubmissionScreen onNavigate={() => {}} />);
     expect(html).toContain('Duyệt bài nộp · Nội dung chương trình');
     expect(html).toContain('Lê Văn Uy');
     expect(html).toContain('SUB-2026-0412');
@@ -119,7 +118,7 @@ describe('Document: Fill & Deliver - Frontend Prototype PA02', () => {
 
   it('renders Screen 6 (UC-B06: Integrate Delegated Results) correctly', () => {
     const html = renderToString(
-      <Screen6IntegrateResults
+      <IntegrateResultsScreen
         values={INITIAL_FORM_VALUES}
         onChangeValues={() => {}}
         onNavigate={() => {}}

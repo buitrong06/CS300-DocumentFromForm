@@ -1,3 +1,4 @@
+from app.core.db import Base
 from app.core.models.drafts import DocumentDraft, RenderSnapshot
 from app.core.models.identity import FileArtifact, User, Workspace, WorkspaceMember
 from app.core.models.submissions import (
@@ -13,6 +14,7 @@ from app.core.models.templates import DocumentTemplate, FormattingPreset, Templa
 
 __all__ = [
     "ActivityEvent",
+    "Base",
     "DocumentDraft",
     "DocumentTemplate",
     "FieldApplyLog",

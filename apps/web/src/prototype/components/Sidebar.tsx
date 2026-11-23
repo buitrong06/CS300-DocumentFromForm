@@ -1,9 +1,9 @@
 import React from 'react';
-import type { ScreenId } from '../types';
+import type { PrototypeScreenId } from '../navigation';
 
 interface SidebarProps {
-  currentScreen: ScreenId;
-  onSelectScreen: (s: ScreenId) => void;
+  currentScreen: PrototypeScreenId;
+  onSelectScreen: (s: PrototypeScreenId) => void;
   activeNavTab: string;
   onSelectNavTab: (tab: string) => void;
   isCollapsed: boolean;
@@ -11,13 +11,13 @@ interface SidebarProps {
 }
 
 const MAIN_NAV = [
-  { id: 'tasks',     label: 'Công việc',       icon: '📋', badge: '3', screen: 'screen2' as ScreenId },
-  { id: 'my_docs',   label: 'Tài liệu của tôi',icon: '📁', badge: null, screen: 'screen2' as ScreenId },
-  { id: 'templates', label: 'Thư viện mẫu',    icon: '📑', badge: null, screen: 'screen1' as ScreenId },
-  { id: 'presets',   label: 'Preset định dạng', icon: '⚙️', badge: null, screen: 'screen2' as ScreenId },
+  { id: 'tasks',     label: 'Công việc',       icon: '📋', badge: '3', screen: 'screen2' as PrototypeScreenId },
+  { id: 'my_docs',   label: 'Tài liệu của tôi',icon: '📁', badge: null, screen: 'screen2' as PrototypeScreenId },
+  { id: 'templates', label: 'Thư viện mẫu',    icon: '📑', badge: null, screen: 'screen1' as PrototypeScreenId },
+  { id: 'presets',   label: 'Preset định dạng', icon: '⚙️', badge: null, screen: 'screen2' as PrototypeScreenId },
 ];
 
-const SCREENS: { id: ScreenId; num: string; name: string; uc: string }[] = [
+const SCREENS: { id: PrototypeScreenId; num: string; name: string; uc: string }[] = [
   { id: 'screen1', num: '1', name: 'Cấu hình trường',              uc: 'UC-A03' },
   { id: 'screen2', num: '2', name: 'Điền form & Xem trước',         uc: 'UC-A06' },
   { id: 'screen3', num: '3', name: 'Kiểm tra & Gợi ý sửa',          uc: 'UC-A07/A08' },
