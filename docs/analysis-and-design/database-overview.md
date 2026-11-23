@@ -37,8 +37,9 @@ flowchart LR
     G4["4. Task & Delegation<br/>(tasks, task_field_scopes, task_assignments)"]
     G5["5. Submission, Review, Apply & Audit<br/>(submissions, submission_reviews, field_apply_logs, field_apply_sources, task_comments, activity_events)"]
 
-    G1 -- "user_id, workspace_id, artifact_id" --> G2
+    G1 -- "user_id, artifact_id" --> G2
     G1 -- "owner_id, artifact_id" --> G3
+    G1 -- "workspace_id, user_id" --> G4
     G2 -- "template_id" --> G3
     G2 -- "template_id" --> G4
     G3 -- "draft_id (1:1 per assignment)" --> G4
@@ -177,7 +178,6 @@ erDiagram
     }
     document_templates {
         bigint id PK
-        bigint workspace_id FK "-> workspaces.id (nullable)"
         bigint owner_id FK "-> users.id"
         text slug "stable family identifier"
         text name
@@ -210,7 +210,7 @@ erDiagram
 | Entity | Key Attributes & Constraints | Relationships & Domain Rules |
 | :--- | :--- | :--- |
 | **`formatting_presets`** | `id` (PK), `slug` (NOT NULL), `version` (NOT NULL), `UNIQUE (slug, version)`, `parent_preset_id` (self-FK), `status` (`reviewing` \| `published`), `core`, `advanced`, `document_types`, `unruled`, `evidence` (all `jsonb`) | Saving a preset creates a new immutable `version` (`UC-A01`). Separating `evidence` into its own `jsonb` column allows the Renderer to `SELECT core, advanced, document_types` without loading regulatory quotes. |
-| **`document_templates`** | `id` (PK), `owner_id` (FK → `users.id`), `workspace_id` (nullable FK → `workspaces.id`), `slug` (NOT NULL), `version` (NOT NULL), `UNIQUE (slug, version)`, `status` (`draft` \| `published` \| `archived`), `source_type` (`preset` \| `uploaded_docx`), `preset_id` (nullable FK), `source_artifact_id` (nullable FK), `org_constants` (`jsonb`), `locked_segments` (`jsonb`), `checklist_approved` (`boolean`) | Supports both preset-generated skeletons (`source_type = 'preset'`) and uploaded DOCX files (`source_type = 'uploaded_docx'`, `UC-A02`). `slug` groups all versions of the same template family; tasks and drafts bind to a specific `document_templates.id` version row. |
+| **`document_templates`** | `id` (PK), `owner_id` (FK → `users.id`), `slug` (NOT NULL), `version` (NOT NULL), `UNIQUE (slug, version)`, `status` (`draft` \| `published` \| `archived`), `source_type` (`preset` \| `uploaded_docx`), `preset_id` (nullable FK), `source_artifact_id` (nullable FK), `org_constants` (`jsonb`), `locked_segments` (`jsonb`), `checklist_approved` (`boolean`), `CHECK ((source_type = 'preset' AND preset_id IS NOT NULL) OR (source_type = 'uploaded_docx' AND source_artifact_id IS NOT NULL))` | Supports both preset-generated skeletons (`source_type = 'preset'`) and uploaded DOCX files (`source_type = 'uploaded_docx'`, `UC-A02`). Owned by `owner_id` (`DEC-015`) and reusable across personal documents (`UC-C01`) or tasks in any workspace where the owner holds `can_assign` (`UC-B01`). `slug` groups all versions of the same template family; tasks and drafts bind to a specific `document_templates.id` version row. |
 | **`template_fields`** | `id` (PK), `template_id` (FK → `document_templates.id` ON DELETE CASCADE), `field_key` (NOT NULL), `UNIQUE (template_id, field_key)`, `UNIQUE (template_id, id)`, `label`, `field_type`, `is_required`, `instructions`, `display_order`, `bindings` (`jsonb`), `automatic_rules` (`jsonb`), `semantic_criteria` (`jsonb`) | Stores typed fields configured in `UC-A03` and checklist rules approved in `UC-A04`. `bindings` is a JSON array because one field can map to multiple positions in the document. |
 
 ---
@@ -254,7 +254,7 @@ erDiagram
 | Entity | Key Attributes & Constraints | Relationships & Domain Rules |
 | :--- | :--- | :--- |
 | **`document_drafts`** | `id` (PK), `template_id` (FK → `document_templates.id`), `owner_id` (FK → `users.id`), `title`, `is_personal` (`boolean`), `field_values` (`jsonb`), `last_check_result` (`jsonb`), `version` (`int` default `1`), `deleted_at` (`timestamptz` nullable) | Single unified working-copy entity for both **Personal Documents** (`is_personal = true`) and **Task Assignments** (`is_personal = false`). `version` increments on every autosave or `Apply` to prevent lost updates. Editable fields are not stored here; they are derived from the owning Task's `task_field_scopes` (all template fields for personal documents and Parent Tasks). |
-| **`render_snapshots`** | `id` (PK), `draft_id` (nullable FK → `document_drafts.id`), `submission_id` (nullable FK → `submissions.id`), `source_draft_version`, `format` (`docx` \| `pdf`), `purpose` (`preview` \| `draft_export` \| `final_export`), `artifact_id` (FK → `file_artifacts.id`), `rendered_at`, `CHECK ((draft_id IS NULL) <> (submission_id IS NULL))` | Append-only record of each output from the authoritative rendering pipeline (`UC-A06` preview, `UC-A09` export). Exactly one source is set. One draft or submission can have many outputs (DOCX and PDF, repeated renders) without updating the source row, which keeps `submissions` immutable (`I1`). |
+| **`render_snapshots`** | `id` (PK), `draft_id` (nullable FK → `document_drafts.id`), `submission_id` (nullable FK → `submissions.id`), `source_draft_version` (nullable `int`), `format` (`docx` \| `pdf`), `purpose` (`preview` \| `draft_export` \| `final_export`), `artifact_id` (FK → `file_artifacts.id`), `rendered_at`, `CHECK ((draft_id IS NOT NULL AND submission_id IS NULL AND source_draft_version IS NOT NULL AND source_draft_version >= 1) OR (submission_id IS NOT NULL AND draft_id IS NULL AND source_draft_version IS NULL))` | Append-only record of each output from the authoritative rendering pipeline (`UC-A06` preview, `UC-A09` export). Exactly one source is set: draft renders record `source_draft_version` for cache invalidation as the draft mutates, whereas submission renders leave `source_draft_version` `NULL` because `submissions` is already immutable (`I1`). |
 
 ---
 
@@ -319,7 +319,6 @@ erDiagram
     field_apply_logs ||--|{ field_apply_sources : "cites"
     submissions ||--o{ field_apply_sources : "source_for"
     tasks ||--o{ task_comments : "thread"
-    submissions ||--o{ task_comments : "feedback_context"
     workspaces ||--o{ activity_events : "audits"
     tasks ||--o{ activity_events : "logs_events"
 
@@ -363,9 +362,9 @@ erDiagram
     task_comments {
         bigint id PK
         bigint task_id FK "-> tasks.id"
-        bigint submission_id FK "-> submissions.id (nullable)"
         bigint author_id FK "-> users.id"
         text body
+        jsonb mentions "offset/length scoped field & submission mentions"
         timestamptz created_at
     }
     activity_events {
@@ -385,9 +384,9 @@ erDiagram
 | :--- | :--- | :--- |
 | **`submissions`** | `id` (PK), `public_code` (UK, NOT NULL), `task_id` (FK), `assignment_id` (FK), `submitted_by` (FK), `template_id` (FK), `source_draft_version`, `field_values_snapshot` (`jsonb`), `verification_summary` (`jsonb`), `created_at`, `UNIQUE (assignment_id, id)`, composite FK `(assignment_id, task_id, submitted_by) → task_assignments (id, task_id, assignee_id)`, composite FK `(task_id, template_id) → tasks (id, template_id)` | **Strictly Immutable (`I1`)**: Captures a point-in-time snapshot when an Assignee clicks Submit (`UC-B04`). No `updated_at` column exists; rows are never mutated after insert, and the underlying `document_drafts` row remains unlocked. The snapshot contains only the fields the Assignee was authorized to edit. The composite FKs make the database reject a Submission whose Task, Assignment, submitter or Template disagree. Exported files are recorded in `render_snapshots`, never on this row. |
 | **`submission_reviews`** | `id` (PK), `submission_id` (UK, FK → `submissions.id`), `assignment_id` (FK → `task_assignments.id`), `reviewer_id` (FK → `users.id`), `decision` (`approved` \| `revision_requested`), `feedback`, `created_at`, composite FK `(assignment_id, submission_id) → submissions (assignment_id, id)` | Each Submission receives at most one decision (`UC-B05`) and always binds to a specific `submission_id`, never to the live `DocumentDraft`. Only the assignment's `latest_submission_id` may be reviewed (§5.2). Approving a child submission updates the child `task_assignments.status` but never auto-submits or approves the Parent Task (`I2`). |
-| **`field_apply_logs`** | `id` (PK), `parent_draft_id` (FK → `document_drafts.id`), `target_template_field_id` (FK → `template_fields.id`), `parent_draft_version_before` (`int`), `parent_draft_version_after` (`int`), `value_before` (`jsonb`, nullable), `value_after` (`jsonb`), `apply_mode` (`direct` \| `combine` \| `rewrite`), `applied_by` (FK → `users.id`), `applied_at` | Append-only record whenever a Parent Assignee applies delegated results into a Parent `DocumentDraft` field (`UC-B06`, `I3`), preserving before/after field values for diff history. |
-| **`field_apply_sources`** | `apply_log_id` (FK → `field_apply_logs.id` ON DELETE CASCADE), `source_submission_id` (FK → `submissions.id`), `PRIMARY KEY (apply_log_id, source_submission_id)` | Links each `field_apply_logs` entry to one or more source Child Submissions (supporting `direct`, `combine`, and `rewrite`). Backend transaction verifies each source belongs to a Subtask of the Parent Assignment and contains the target field. |
-| **`task_comments`** | `id` (PK), `task_id` (FK → `tasks.id`), `submission_id` (nullable FK → `submissions.id`), `author_id` (FK → `users.id`), `body` (NOT NULL), `created_at` | Task-scoped discussion messages (`UC-B07`), isolated within the task's workspace and authorized participants. |
+| **`field_apply_logs`** | `id` (PK), `parent_draft_id` (FK → `document_drafts.id`), `target_template_field_id` (FK → `template_fields.id`), `parent_draft_version_before` (`int`), `parent_draft_version_after` (`int`), `value_before` (`jsonb`, nullable), `value_after` (`jsonb`), `apply_mode` (`direct` \| `combine` \| `rewrite`), `applied_by` (FK → `users.id`), `applied_at`, `CHECK (parent_draft_version_after > parent_draft_version_before)` | Append-only record whenever a delegating coordinator (`Parent Assignee` on their existing `task_assignments.draft_id`, or `Root Assigner` on a selected/provisioned `is_personal = true` target `DocumentDraft` per `DEC-017`) applies delegated results into `parent_draft_id` (`UC-B06`, `I3`), preserving before/after field values for diff history. |
+| **`field_apply_sources`** | `apply_log_id` (FK → `field_apply_logs.id` ON DELETE CASCADE), `source_submission_id` (FK → `submissions.id`), `PRIMARY KEY (apply_log_id, source_submission_id)` | Links each `field_apply_logs` entry to one or more source Submissions (supporting `direct`, `combine`, and `rewrite`). Backend transaction verifies each source belongs to a delegated Subtask of the Parent Assignment (or to Root Tasks created by the `Root Assigner` on the same `template_id` per `DEC-017`) and contains the target field. |
+| **`task_comments`** | `id` (PK), `task_id` (FK → `tasks.id`), `author_id` (FK → `users.id`), `body` (NOT NULL), `mentions` (`jsonb` default `'[]'`), `created_at` | Task-scoped discussion messages (`UC-B07`), isolated within the task's workspace and authorized participants. `mentions` stores an array of validated `offset` + `length` span objects referencing in-scope `field` or `submission` entities (`DEC-018`). |
 | **`activity_events`** | `id` (PK), `workspace_id` (nullable FK → `workspaces.id`), `task_id` (nullable FK → `tasks.id`), `actor_id` (FK → `users.id`), `event_type` (`text`), `entity_type` (`text`), `entity_id` (`bigint`), `payload` (`jsonb`), `occurred_at` (`timestamptz`) | Append-only business audit trail (`TaskAssigned`, `SubmissionCreated`, `SubmissionReviewed`, `FieldApplied`, `TaskCancelled`, per `COMMUNICATION_DOMAIN.md §8.4`). Covers lifecycle audit and activity feeds only—not keystroke edits or application logs. |
 
 ---
@@ -395,18 +394,37 @@ erDiagram
 ## 5. Indexing & Transaction Rules for Implementation
 
 ### 5.1. Mandatory Indexes
-1. **Foreign Key Indexes**: Every FK column across all 18 tables must have a B-tree index.
+1. **Foreign Key Indexes**: Every FK column across all 18 tables must be covered by a B-tree index (either a dedicated single-column index, or as the leading column of a `PRIMARY KEY`, `UNIQUE` constraint, or composite index per the B-tree leftmost-prefix rule — avoiding duplicate single-column indexes).
 2. **Composite Indexes (Equality before Range/Sort)**:
+   - `formatting_presets (status, is_builtin)` — Published preset library filter (`UC-A01`).
+   - `document_templates (owner_id, status)` — Owner template library filter (`UC-A05`, `DEC-015`).
+   - `template_fields (template_id, display_order)` — Ordered form field loading without extra sort (`UC-A03`, `UC-A06`).
    - `tasks (workspace_id, status, due_at)` — Workspace task dashboard & overdue filter (`UC-B08`).
    - `task_assignments (assignee_id, status, updated_at desc)` — Assignee task list (`UC-B02`).
    - `submissions (assignment_id, created_at desc)` — Per-recipient submission history (`UC-B05`).
+   - `field_apply_logs (parent_draft_id, applied_at desc)` — Parent draft Apply provenance history (`UC-B06`).
    - `task_comments (task_id, created_at asc)` — Task discussion feed (`UC-B07`).
    - `activity_events (task_id, occurred_at desc)` & `(workspace_id, occurred_at desc)` — Task/workspace audit timeline (`COMMUNICATION_DOMAIN.md §8.4`).
 3. **Partial Indexes**:
    - `document_drafts (owner_id, updated_at desc) WHERE is_personal = true AND deleted_at IS NULL` — Personal document library (`UC-C03`).
    - `tasks (parent_assignment_id) WHERE parent_assignment_id IS NOT NULL` — Fast lookup of delegated Subtasks for a Parent Assignment (`UC-B03`, `UC-B06`).
 
-### 5.2. Transaction & Concurrency Rules
+### 5.2. Access Pattern to Schema & Index Traceability Matrix
+
+| Use Case / Capability | Primary Access Pattern (Query Shape) | Enforcing Constraints | Supporting Index |
+| :--- | :--- | :--- | :--- |
+| **Auth & Workspace Membership (`UC-B01`, `DEC-011`)** | Lookup user by `firebase_uid` / `email`; list user workspaces or verify `role` / `can_assign` in `workspace_members` by `(workspace_id, user_id)` | `users.firebase_uid UK`, `users.email UK`, `workspace_members UNIQUE (workspace_id, user_id)`, `CHECK (role IN ('admin', 'member'))` | Unique B-tree indexes on `firebase_uid`, `email`, `(workspace_id, user_id)`, and FK index on `workspace_members (user_id)` |
+| **Preset Library & Import (`UC-A01`)** | List published presets without loading heavy `evidence` JSONB; lookup specific `(slug, version)` | `formatting_presets UNIQUE (slug, version)`, `CHECK (status IN ('reviewing', 'published'))` | `UNIQUE (slug, version)` and composite index `formatting_presets (status, is_builtin)` |
+| **Template Library & Dual Source (`UC-A02`–`UC-A05`, `DEC-015`)** | Filter templates by `(owner_id, status)`; load fields ordered by `display_order` | `document_templates UNIQUE (slug, version)`, `CHECK` on `source_type` vs. `preset_id`/`source_artifact_id`, `template_fields UNIQUE (template_id, field_key)` & `UNIQUE (template_id, id)` | FK index on `owner_id` (and `(owner_id, status)`), and composite index `template_fields (template_id, display_order)` |
+| **Personal Document Library (`UC-C01`–`UC-C03`)** | List active personal drafts for an owner ordered by `updated_at DESC` | `document_drafts.is_personal`, nullable `deleted_at` | Partial index `document_drafts (owner_id, updated_at desc) WHERE is_personal = true AND deleted_at IS NULL` |
+| **Guided Form Autosave & Rendering (`UC-A06`–`UC-A09`)** | Optimistic-locked draft update by `(id, version)`; lookup latest `render_snapshots` for a draft or submission | `document_drafts CHECK (version >= 1)`, `render_snapshots CHECK ((draft_id IS NULL) <> (submission_id IS NULL))` | PK `document_drafts (id)`, FK indexes on `render_snapshots (draft_id)` and `(submission_id)` |
+| **Workspace Task Dashboard & Assignee Inbox (`UC-B01`, `UC-B02`, `UC-B08`)** | Filter workspace tasks by `(workspace_id, status)` ordered by `due_at`; filter recipient inbox by `(assignee_id, status)` ordered by `updated_at DESC` | `task_assignments UNIQUE (task_id, assignee_id)`, `draft_id UK`, `CHECK` on task & assignment `status` | Composite indexes `tasks (workspace_id, status, due_at)` and `task_assignments (assignee_id, status, updated_at desc)` |
+| **Subtask Delegation & Field Scopes (`UC-B03`)** | List child Subtasks of a `parent_assignment_id`; read `task_field_scopes` for a task or detect overlap across sibling Subtasks | `tasks UNIQUE (id, template_id)`, `task_field_scopes PK (task_id, template_field_id)`, composite FKs to `tasks (id, template_id)` and `template_fields (template_id, id)` | Partial index `tasks (parent_assignment_id) WHERE parent_assignment_id IS NOT NULL` and PK `(task_id, template_field_id)` |
+| **Immutable Submit & Latest-Snapshot Review (`UC-B04`, `UC-B05`)** | Lock `task_assignments` row (`FOR UPDATE`), insert `submissions`, update `latest_submission_id`; list recipient submissions newest-first; insert 1:1 `submission_reviews` | `submissions UNIQUE (assignment_id, id)`, composite FKs on `submissions`, `task_assignments (id, latest_submission_id)`, and `submission_reviews (assignment_id, submission_id)` + `submission_id UK` | Composite index `submissions (assignment_id, created_at desc)` and `submission_reviews (submission_id) UK` |
+| **Manual Apply & Provenance (`UC-B06`)** | Optimistic-locked update on parent `document_drafts`; append `field_apply_logs` + `field_apply_sources`; query Apply history for a parent draft | `field_apply_logs CHECK (apply_mode IN ('direct', 'combine', 'rewrite'))`, `CHECK (parent_draft_version_after > parent_draft_version_before)`, `field_apply_sources PK (apply_log_id, source_submission_id)` | Composite index `field_apply_logs (parent_draft_id, applied_at desc)` and FK indexes |
+| **Task Discussion & Audit Timeline (`UC-B07`, `DEC-018`)** | Chronological comments per task (with `mentions` JSONB spans); reverse-chronological audit events per task or workspace | FK constraints to `workspaces`, `tasks`, `users` (`ON DELETE RESTRICT` on actors/authors) | Composite indexes `task_comments (task_id, created_at asc)` and `activity_events (task_id, occurred_at desc)` / `(workspace_id, occurred_at desc)` |
+
+### 5.3. Transaction & Concurrency Rules
 1. **Short Transactions Only (`lock-short-transactions`)**: Never hold an open database transaction or row lock while invoking **LibreOffice Headless** (`UC-A06` preview / `UC-A09` export) or **Ollama LLM** (`UC-A07` semantic check). Read the draft state, close the transaction, run external inference/rendering, then open a millisecond transaction to persist results.
 2. **Optimistic Concurrency Control**: Updating `document_drafts` (via autosave `UC-A06` or manual `Apply` `UC-B06`) must check and increment `version`:
    ```sql
