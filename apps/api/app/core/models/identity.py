@@ -7,26 +7,13 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Identity,
-    MetaData,
     Text,
     UniqueConstraint,
     func,
 )
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column
 
-NAMING_CONVENTION = {
-    "ix": "ix_%(table_name)s_%(column_0_N_name)s",
-    "uq": "uq_%(table_name)s_%(column_0_N_name)s",
-    "ck": "ck_%(table_name)s_%(constraint_name)s",
-    "fk": "fk_%(table_name)s_%(column_0_N_name)s_%(referred_table_name)s",
-    "pk": "pk_%(table_name)s",
-}
-
-
-class Base(DeclarativeBase):
-    """Shared SQLAlchemy metadata used by Alembic and all domain modules."""
-
-    metadata = MetaData(naming_convention=NAMING_CONVENTION)
+from app.core.db import Base
 
 
 class User(Base):

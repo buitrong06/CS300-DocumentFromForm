@@ -70,7 +70,10 @@ This specification defines the domain rules for assigning, delegating, completin
 
 - Stores mutable field values (`field_values`) and an optimistic concurrency `version`.
 - A Parent Draft allows the Parent Assignee to edit all authorized fields in $F$.
-- A Subtask Draft allows its Assignee to edit only the delegated fields in $S$.
+- A Subtask Draft allows its Assignee to edit only the delegated `editable` fields in $S$.
+- **Subtask Form & Preview Rendering (`DEC-016`)**:
+  - *Guided Form Panel*: Displays only the fields present in `task_field_scopes` for that Subtask (`editable` fields as active inputs; `readonly` fields as locked reference values). Unscoped fields ($F \setminus (S_{\text{editable}} \cup S_{\text{readonly}})$) are omitted from the form list.
+  - *Document Preview Panel*: Renders the **complete template skeleton** (all fixed/locked template text and layout remain intact for full visual context), populating values only for `editable` and `readonly` fields. Unscoped fields remain blank template placeholders and never leak values from the Parent Draft or sibling Subtasks.
 - **Autosave is not Submit**: Saving a draft never creates a submission or notifies the reviewer of a formal submission.
 
 ### 5.3. Immutable Submission Snapshot
@@ -88,23 +91,55 @@ This specification defines the domain rules for assigning, delegating, completin
 
 ---
 
-## 6. Manual Synthesis into Parent Draft (`Apply`)
+## 6. Manual Synthesis into Target / Parent Draft (`Apply`)
 
-- Approved Child Submissions serve as reference inputs for the Parent Assignee, who has full editorial authority over all fillable fields of the Parent Draft (select, copy, combine, rewrite, or ignore).
+- Approved Submissions serve as reference inputs for the delegating coordinator (either a `Parent Assignee` who delegated Subtasks from `parent_assignment_id`, or a `Root Assigner` synthesizing submissions across a Root Task), who has full editorial authority over all fillable fields of their target `DocumentDraft` (select, copy, combine, rewrite, or ignore).
+- **Target `DocumentDraft` Resolution (`DEC-017`)**:
+  - *Mid-level `Parent Assignee`*: `Apply` mutates the existing `DocumentDraft` already bound to their `parent_assignment_id` (`task_assignments.draft_id`).
+  - *`Root Assigner` (no upstream `parent_assignment_id`)*: When a `Root Assigner` initiates `Apply` / synthesis across recipient submissions of one or more Root Tasks they created on the same `template_id`, the `Root Assigner` selects an existing `DocumentDraft` (`is_personal = true`, `owner_id = Root Assigner`, same `template_id`) or provisions a new one as `parent_draft_id`.
 - **Structured `Apply` Action**:
-  - Updates only the targeted field(s) in the Parent Draft, never performing blind full-document replacement.
-  - Checks the Parent Draft's `version` (optimistic locking; rejects stale updates with `409 Conflict`) and warns before overwriting non-empty existing field data.
-  - Records append-only **provenance metadata** in `field_apply_logs` (`parent_draft_id`, `target_template_field_id`, `parent_draft_version_before`, `parent_draft_version_after`, `value_before`, `value_after`, `apply_mode` in `direct | combine | rewrite`, `applied_by`, `applied_at`) and links one or more contributing Child Submissions in `field_apply_sources (apply_log_id, source_submission_id)`.
-  - When the Parent Assignee manually combines or rewrites content from multiple Child Submissions (`apply_mode` = `combine` or `rewrite`), all referenced `source_submission_id`s are linked in `field_apply_sources` (verified to belong to Subtasks of the Parent Assignment and to include the target field) without requiring character-level provenance.
-- Creating a new Child Submission after an `Apply` never automatically overwrites the Parent Draft.
-- Once the Parent Draft is complete, the Parent Assignee explicitly submits a **Parent Submission** in the superior workspace for the Parent Assigner to review.
+  - Updates only the targeted field(s) in the target `DocumentDraft` (`parent_draft_id`), never performing blind full-document replacement.
+  - Checks the target Draft's `version` (optimistic locking; rejects stale updates with `409 Conflict`) and warns before overwriting non-empty existing field data.
+  - Records append-only **provenance metadata** in `field_apply_logs` (`parent_draft_id`, `target_template_field_id`, `parent_draft_version_before`, `parent_draft_version_after`, `value_before`, `value_after`, `apply_mode` in `direct | combine | rewrite`, `applied_by`, `applied_at`) and links one or more contributing Submissions in `field_apply_sources (apply_log_id, source_submission_id)`.
+  - When the coordinator manually combines or rewrites content from multiple Submissions (`apply_mode` = `combine` or `rewrite`), all referenced `source_submission_id`s are linked in `field_apply_sources` (verified to belong to the coordinator's delegated Subtasks under `parent_assignment_id`, or to Root Tasks created by that `Root Assigner` on the same `template_id` per `DEC-017`, and to include the target field) without requiring character-level provenance.
+- Creating a new Submission after an `Apply` never automatically overwrites the target Draft.
+- Once a mid-level Parent Draft is complete, the Parent Assignee explicitly submits a **Parent Submission** in the superior workspace for the Parent Assigner to review; a `Root Assigner` may export the final synthesized document directly (`UC-A09`).
 
 ---
 
 ## 7. Task Communication and Visibility
 
 - Every Task has a task-scoped discussion thread for clarifications, updates, review feedback, and activity history.
-- Messages and comments are bound to `task_id` and `author_id`; review feedback is additionally bound to `submission_id`.
+- Messages and comments (`task_comments`) are bound to `task_id` and `author_id`, storing plain text in `body` and an array of validated span objects in `mentions` (`JSONB`), while formal review decisions and feedback are bound to `submission_id` in `submission_reviews`.
+- **In-Scope `@mention` Span Format & Validation (`UC-B07`, `DEC-018`)**:
+  - A single message in `task_comments` may mention zero, one, or multiple fields and submissions within the task's authorized scope using `offset` + `length` character spans into `body` (distinguishing real selected `@mentions` from plain-text `@...` substrings):
+    ```json
+    {
+      "id": 15,
+      "task_id": 10,
+      "author_id": 3,
+      "body": "Chữ @kinh-phi đầu tiên là gõ tay, còn @Kinh phí dự kiến ở bản @SUB-2026-0412 là mention thật.",
+      "mentions": [
+        {
+          "offset": 38,
+          "length": 18,
+          "type": "field",
+          "id": 42,
+          "field_key": "kinh_phi_du_kien",
+          "label": "Kinh phí dự kiến"
+        },
+        {
+          "offset": 62,
+          "length": 14,
+          "type": "submission",
+          "id": 500,
+          "public_code": "SUB-2026-0412"
+        }
+      ],
+      "created_at": "2026-11-23T09:50:00Z"
+    }
+    ```
+  - Before persisting a comment, the backend validates every span in `mentions`: (1) `offset` and `length` must fall within `body` without overlapping; (2) every `"field"` mention must belong to `tasks.template_id` (and lie within `task_field_scopes` if the author is a Subtask Assignee); (3) every `"submission"` mention must belong to `task_id` and respect recipient isolation (`I4`: an Assignee may only mention their own submissions, whereas the Task Assigner may mention any submission on that task).
 - Visibility follows workspace and assignment scope:
   - Superior workspace members with task access see the Parent Task and Parent Submissions.
   - The Parent Assignee sees the Parent Draft, all Subtasks they created in the internal workspace, and all internal Submissions.
