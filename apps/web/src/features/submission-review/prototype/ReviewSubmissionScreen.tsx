@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { SubmissionSnapshot } from '../model';
 import type { PrototypeScreenId } from '../../../prototype/navigation';
 import { INITIAL_SUBMISSIONS } from '../../../prototype/scenario';
+import { ExportOptions } from '../../document-filling/prototype/ExportDocumentScreen';
 
 interface ReviewSubmissionScreenProps {
   onNavigate: (screen: PrototypeScreenId) => void;
@@ -203,12 +204,10 @@ export const ReviewSubmissionScreen: React.FC<ReviewSubmissionScreenProps> = ({ 
                   So sánh với lần #1
                 </label>
 
-                <button
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => alert(`Đang xuất file snapshot ${activeSub.submissionCode}...`)}
-                >
-                  Xuất DOCX/PDF bản này
-                </button>
+                <details className="pa02-snapshot-export" key={activeSub.id}>
+                  <summary>Xuất DOCX/PDF bản này</summary>
+                  <ExportOptions snapshot={activeSub.submissionCode} />
+                </details>
               </div>
             </div>
 

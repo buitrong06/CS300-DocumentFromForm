@@ -19,6 +19,7 @@ export const INITIAL_TEMPLATE_FIELDS: TemplateFieldConfig[] = [
     required: true,
     positionsCount: 1,
     instructions: 'Chọn khoa bạn đang theo học.',
+    choices: ['Công nghệ thông tin', 'Toán – Tin học', 'Vật lý – Vật lý kỹ thuật'],
     sourceNote: 'Tự đoán từ nhãn · đổi được',
   },
   {

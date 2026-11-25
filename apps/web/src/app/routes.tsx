@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useMatch } from "react-router-dom";
 
 import { DevelopmentNavigation } from "./layouts/DevelopmentNavigation";
 
@@ -14,9 +14,11 @@ const PrototypeApp = lazy(async () => {
 });
 
 export function AppRoutes() {
+  const isPrototype = useMatch("/prototype");
+
   return (
     <>
-      <DevelopmentNavigation />
+      {!isPrototype && <DevelopmentNavigation />}
       <Suspense fallback={<p className="route-loading">Đang tải…</p>}>
         <Routes>
           <Route path="/templates/import" element={<TemplateImportPage />} />

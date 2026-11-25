@@ -14,6 +14,7 @@ export interface TemplateFieldConfig {
   required: boolean;
   positionsCount: number;
   instructions: string;
+  choices?: string[];
   sourceNote?: string;
   isAmbiguous?: boolean;
 }
