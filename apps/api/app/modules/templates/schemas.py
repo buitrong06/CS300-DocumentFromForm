@@ -148,6 +148,12 @@ class GenerationPatch(BaseModel):
     revision: int = Field(ge=1)
     candidates: list[FieldCandidate]
 
+    @model_validator(mode="after")
+    def unique_candidate_ids(self) -> GenerationPatch:
+        if len({candidate.id for candidate in self.candidates}) != len(self.candidates):
+            raise ValueError("candidate IDs must be unique")
+        return self
+
 
 class SuggestionRequest(BaseModel):
     block_ids: list[str] = Field(default_factory=list)
