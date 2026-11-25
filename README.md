@@ -41,5 +41,17 @@ A web application for Vietnamese administrative and organizational document prep
    - Communication & Delegation Domain: [docs/analysis-and-design/COMMUNICATION_DOMAIN.md](docs/analysis-and-design/COMMUNICATION_DOMAIN.md)
    - Database ER Model: [docs/analysis-and-design/database-overview.md](docs/analysis-and-design/database-overview.md)
 4. Copy `.env.example` to `.env` for local development.
-5. Start PostgreSQL with `docker compose up -d postgres`, then run `alembic upgrade head` from `apps/api/`.
+5. Start PostgreSQL with `docker compose up -d postgres`. From `apps/api/`, run `alembic upgrade head` and `python -m app.core.seed` to provision the local development account and sample records.
 6. Track verified slice implementation progress in [docs/management/IMPLEMENTATION_STATUS.md](docs/management/IMPLEMENTATION_STATUS.md).
+
+### DOCX Form Extraction
+
+The API saves uploaded template drafts and accepted fields in PostgreSQL and stores the original DOCX files in `STORAGE_LOCAL_DIR` with `STORAGE_BACKEND=local`. Use the same storage directory when restarting the API or importing older drafts.
+
+If you used the SQLite prototype, run the one-time import from `apps/api/` after upgrading and seeding PostgreSQL. Use the path to your SQLite file and the UID of the account that should own the imported drafts. The seeded development account uses `dev-user-001`.
+
+```bash
+python -m app.modules.templates.import_legacy ./data/form-generations.sqlite3 --owner-uid dev-user-001
+```
+
+The importer reads the SQLite file in read-only mode and preserves generation IDs and revisions. You can rerun it after an interruption. It reports entries whose DOCX is missing or fails its checksum and skips those entries.
