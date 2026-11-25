@@ -1,0 +1,474 @@
+/* ============================================================
+   FIGMA-APP STYLES — Strict Figma Light Theme (#f6f7fb / #edf0f9 / #4f38c7)
+   Sparser component layout matching the 1240×760 Figma frames.
+   ============================================================ */
+
+.fapp-shell {
+  display: flex;
+  min-height: 100dvh;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #f6f7fb;
+  color: #111827;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   LEFT SIDEBAR (224px, #edf0f9)
+   ============================================================ */
+
+.fapp-sidebar {
+  width: 224px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: #edf0f9;
+  border-right: 1px solid #d6deed;
+  padding: 28px 16px 24px;
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+}
+
+.fapp-brand {
+  padding: 0 12px 28px;
+}
+
+.fapp-brand-name {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #111827;
+}
+
+.fapp-brand-sub {
+  font-size: 12.5px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.fapp-nav-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fapp-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  height: 38px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: left;
+  transition: background 0.12s, color 0.12s;
+}
+
+.fapp-nav-item:hover {
+  background: #e2e7f5;
+  color: #111827;
+}
+
+.fapp-nav-item.active {
+  background: #ebe3ff;
+  color: #4f38c7;
+  font-weight: 600;
+}
+
+.fapp-nav-icon {
+  font-size: 14px;
+  width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.fapp-workspace {
+  margin-top: auto;
+  background: #ffffff;
+  border: 1px solid #d6deed;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  text-decoration: none;
+  display: block;
+  transition: border-color 0.12s;
+}
+
+.fapp-workspace:hover {
+  border-color: #4f38c7;
+}
+
+.fapp-workspace-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fapp-workspace-note {
+  font-size: 11.5px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+/* ============================================================
+   MAIN COLUMN (Sparser Layout)
+   ============================================================ */
+
+.fapp-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 28px 48px 48px;
+  max-width: 1160px;
+}
+
+.fapp-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.fapp-breadcrumb {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.fapp-heading {
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.fapp-subheading {
+  font-size: 14px;
+  color: #64748b;
+  margin-top: 8px;
+}
+
+.fapp-header-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.fapp-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #ebe3ff;
+  color: #4f38c7;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  border: 1px solid #d6deed;
+}
+
+.fapp-page-body {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ============================================================
+   CARDS, CHIPS & BUTTONS
+   ============================================================ */
+
+.fapp-card {
+  background: #ffffff;
+  border: 1px solid #d6deed;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.fapp-section-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 6px;
+}
+
+.fapp-section-help {
+  font-size: 13.5px;
+  color: #64748b;
+  margin: 0;
+}
+
+.fapp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 9px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.fapp-btn-sm {
+  height: 34px;
+  padding: 0 12px;
+  font-size: 12.5px;
+}
+
+.fapp-btn-primary {
+  background: #4f38c7;
+  color: #ffffff;
+  border-color: #4f38c7;
+}
+.fapp-btn-primary:hover {
+  background: #432eb0;
+}
+
+.fapp-btn-secondary {
+  background: #ffffff;
+  color: #111827;
+  border-color: #d6deed;
+}
+.fapp-btn-secondary:hover {
+  background: #f8fafc;
+}
+
+.fapp-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.fapp-chip-violet { background: #ebe3ff; color: #4f38c7; }
+.fapp-chip-green  { background: #dcfce7; color: #15803d; }
+.fapp-chip-yellow { background: #fef3c7; color: #b45309; }
+.fapp-chip-red    { background: #fee2e2; color: #b91c1c; }
+.fapp-chip-gray   { background: #f1f5f9; color: #475569; }
+
+.fapp-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.fapp-footer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 8px;
+}
+
+/* ============================================================
+   METRICS & OVERVIEW
+   ============================================================ */
+
+.fapp-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.fapp-metric-card {
+  background: #ffffff;
+  border: 1px solid #d6deed;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.fapp-metric-label {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+
+.fapp-metric-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.1;
+  margin-bottom: 8px;
+}
+
+.fapp-metric-note {
+  font-size: 12.5px;
+  color: #94a3b8;
+}
+
+.fapp-overview-grid {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 24px;
+  align-items: start;
+}
+
+.fapp-row-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.fapp-row-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 0;
+  border-bottom: 1px solid #eef2f7;
+}
+.fapp-row-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.fapp-row-item:first-child {
+  padding-top: 4px;
+}
+
+/* ============================================================
+   FORM INPUTS & PREVIEW PAPER
+   ============================================================ */
+
+.fapp-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.fapp-field-group:last-child {
+  margin-bottom: 0;
+}
+
+.fapp-field-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.fapp-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #d6deed;
+  border-radius: 9px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #111827;
+  background: #ffffff;
+  outline: none;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+.fapp-input:focus {
+  border-color: #4f38c7;
+  box-shadow: 0 0 0 3px rgba(79, 56, 199, 0.12);
+}
+
+.fapp-two-col {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 28px;
+  align-items: start;
+}
+
+.fapp-two-col-wide {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+.fapp-paper {
+  background: #ffffff;
+  border: 1px solid #d6deed;
+  border-radius: 10px;
+  padding: 28px 24px;
+  font-family: 'Times New Roman', Times, Georgia, serif;
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: #111827;
+  min-height: 320px;
+}
+
+.fapp-paper-heading {
+  text-align: center;
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 18px;
+  letter-spacing: 0.02em;
+}
+
+.fapp-paper-span {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.fapp-paper-span.active {
+  background: #ebe3ff;
+  outline: 1.5px solid #4f38c7;
+}
+
+.fapp-proposal-row {
+  border: 1px solid #d6deed;
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  background: #ffffff;
+  transition: border-color 0.12s, background 0.12s;
+}
+.fapp-proposal-row.selected {
+  border-color: #4f38c7;
+  background: #f8f6ff;
+}
+
+.fapp-toast {
+  position: fixed;
+  right: 28px;
+  bottom: 28px;
+  width: 380px;
+  background: #ffffff;
+  border: 1px solid #d6deed;
+  border-left: 5px solid #4f38c7;
+  border-radius: 10px;
+  padding: 16px 20px;
+  box-shadow: 0 12px 28px rgba(17, 24, 39, 0.12);
+  z-index: 60;
+}
+
+@media (max-width: 1024px) {
+  .fapp-main { padding: 24px; }
+  .fapp-metrics-grid { grid-template-columns: repeat(2, 1fr); }
+  .fapp-overview-grid,
+  .fapp-two-col,
+  .fapp-two-col-wide { grid-template-columns: 1fr; }
+}
