@@ -17,5 +17,20 @@ services:
       timeout: 5s
       retries: 5
 
+  # Optional PDF render service (DEC-022). Enable with RENDER_SERVICE_URL=http://127.0.0.1:3100
+  renderer:
+    image: gotenberg/gotenberg:8.40.0@sha256:53073e798c8ef39ea2187e44cb67bab77894ea2509100b94c4fe3b461f7b2996
+    container_name: docfill-renderer
+    restart: unless-stopped
+    command:
+      - gotenberg
+      - --libreoffice-auto-start=true
+      - --chromium-disable-routes=true
+    ports:
+      - "127.0.0.1:3100:3000"
+    volumes:
+      # Licensed fonts such as Times New Roman go here; see fonts/README.md.
+      - ${DOCFILL_FONTS_DIR:-./fonts}:/usr/local/share/fonts/docfill:ro
+
 volumes:
   pgdata:
