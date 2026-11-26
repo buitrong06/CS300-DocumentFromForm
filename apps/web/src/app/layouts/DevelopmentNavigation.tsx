@@ -1,11 +1,12 @@
 import { NavLink } from "react-router-dom";
 
-/** Temporary navigation between the integrated extraction slice and PA02 reference UI. */
+/** Navigation keeps the live PA04 flow separate from the mock PA02 reference UI. */
 export function DevelopmentNavigation() {
   return (
     <nav className="workspace-switcher" aria-label="Không gian phát triển">
-      <NavLink to="/templates/import">Trích xuất trường</NavLink>
-      <NavLink to="/prototype">Prototype PA02</NavLink>
+      <NavLink to="/templates/new">Tạo Mẫu biểu</NavLink>
+      <NavLink to="/library">Thư viện</NavLink>
+      <NavLink to="/prototype">Prototype PA02 (mock)</NavLink>
     </nav>
   );
 }
