@@ -1,6 +1,6 @@
 # Uploaded-DOCX test on the 22-template corpus (2026-11-26)
 
-Corpus: `PA02 — Kho văn bản mẫu (22 tài liệu)` from the course materials (not committed; originals verified unchanged by SHA-256). Code: uncommitted working tree on `feat/pa04-template-form-export`. Renderer: Gotenberg 8.40.0 (DEC-022) with Times New Roman mounted.
+Corpus: `PA02 — Kho văn bản mẫu (22 tài liệu)` from the course materials (not committed; originals verified unchanged by SHA-256). Code: the then-uncommitted working tree on `feat/pa04-template-form-export`. Renderer: Gotenberg 8.40.0 (DEC-022) with Times New Roman mounted.
 
 ## Method
 

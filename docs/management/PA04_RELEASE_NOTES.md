@@ -92,7 +92,7 @@ The rendered browser screen displayed the authoritative embedded PDF preview and
 - Manual Binding selection works per source paragraph from a text picker, not by clicking on the rendered preview.
 - UC-A09 A4 (export of a Submission snapshot) depends on Group B and is not implemented.
 - The configured `RENDER_WORK_DIR` must be writable by the application and LibreOffice. The repository default is application-owned under `tmp/render`; a restricted runtime scratch directory can prevent LibreOffice from creating its user profile.
-- This is local verification only: no commit, remote push, pull request, remote CI, merge, tag, or GitHub Release has been created.
+- The results here are local verification. The work is submitted by pull request (see it for remote CI status); it has not been reviewed or merged, and no tag or GitHub Release exists.
 - No legal or regulatory compliance certification is claimed.
 
 ## Release gate still required
