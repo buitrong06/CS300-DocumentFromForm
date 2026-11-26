@@ -8,7 +8,8 @@ from app.modules.auth.router import router as auth_router
 from app.modules.drafts.router import router as drafts_router
 from app.modules.presets.router import router as presets_router
 from app.modules.rendering.router import router as rendering_router
-from app.modules.templates.router import router as templates_router
+from app.modules.templates.router import router as form_generations_router
+from app.modules.templates.template_router import router as templates_router
 
 settings = get_settings()
 
@@ -23,10 +24,12 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition", "X-Render-Snapshot-Id", "X-Artifact-SHA256"],
 )
 
 app.include_router(auth_router)
 app.include_router(presets_router)
+app.include_router(form_generations_router)
 app.include_router(templates_router)
 app.include_router(drafts_router)
 app.include_router(rendering_router)

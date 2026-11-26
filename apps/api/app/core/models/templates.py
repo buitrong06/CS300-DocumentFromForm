@@ -125,6 +125,7 @@ class DocumentTemplate(Base):
     checklist_approved: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default=text("false")
     )
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -160,6 +161,9 @@ class TemplateField(Base):
         Integer, nullable=False, default=0, server_default=text("0")
     )
     bindings: Mapped[list[Any]] = mapped_column(
+        JSONB, nullable=False, default=list, server_default=text("'[]'::jsonb")
+    )
+    choice_options: Mapped[list[Any]] = mapped_column(
         JSONB, nullable=False, default=list, server_default=text("'[]'::jsonb")
     )
     automatic_rules: Mapped[list[Any]] = mapped_column(

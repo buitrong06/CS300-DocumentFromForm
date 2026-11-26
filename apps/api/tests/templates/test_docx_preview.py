@@ -17,6 +17,19 @@ def test_preview_keeps_word_alignment_and_renders_detected_regions_as_fields() -
     assert 'aria-label="Họ tên"' in html
 
 
+def test_preview_ignores_a_malicious_word_color_attribute() -> None:
+    source = docx_with_body(
+        '<w:p><w:r><w:rPr><w:color w:val="000000&quot; onmouseover=&quot;alert(1)"/>'
+        "</w:rPr><w:t>Nội dung an toàn</w:t></w:r></w:p>"
+    )
+    generation = DocxAnalyzer().analyze(source, "malicious-color.docx")
+
+    html = DocxPreviewRenderer().render(source, generation)
+
+    assert "onmouseover" not in html
+    assert "alert(1)" not in html
+
+
 def test_consecutive_unlabeled_dotted_lines_render_as_one_large_field() -> None:
     source = docx_with_body(
         "<w:p><w:r><w:t>Nội dung trình bày:</w:t></w:r></w:p>"

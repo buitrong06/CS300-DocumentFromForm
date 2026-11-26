@@ -1,34 +1,65 @@
 from __future__ import annotations
 
+import re
 from collections import defaultdict
+from copy import deepcopy
+from datetime import date
 from io import BytesIO
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from lxml import etree
 
+from app.modules.drafts.rich_text import (
+    RichTextError,
+    RichTextRun,
+    rich_text_to_plain_text,
+    rich_text_to_word_runs,
+    validate_rich_text,
+)
 from app.modules.templates.schemas import (
     CandidateStatus,
     DetectionMethod,
     FieldCandidate,
+    FieldType,
     FillRequest,
     FormGeneration,
 )
 from app.modules.templates.services.docx_analyzer import NS, W
+
+SAFE_XML_PARSER = etree.XMLParser(resolve_entities=False, no_network=True)
+ISO_DATE_RE = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
 
 
 class DocxFillError(ValueError):
     pass
 
 
+def format_date_value(value: str) -> str:
+    """Write a stored ISO date as dd/mm/yyyy; leave any other text untouched."""
+    if not ISO_DATE_RE.fullmatch(value):
+        return value
+    try:
+        return date.fromisoformat(value).strftime("%d/%m/%Y")
+    except ValueError:
+        return value
+
+
 class DocxFiller:
     """Replaces accepted field source ranges while retaining surrounding Word runs."""
 
-    def fill(self, source: bytes, generation: FormGeneration, request: FillRequest) -> bytes:
+    def fill(
+        self,
+        source: bytes,
+        generation: FormGeneration,
+        request: FillRequest,
+        *,
+        allow_missing_required: bool = False,
+    ) -> bytes:
         accepted = [
             field for field in generation.candidates if field.status is CandidateStatus.ACCEPTED
         ]
-        self._validate_values(accepted, request)
+        self._validate_values(accepted, request, allow_missing_required=allow_missing_required)
         try:
             with ZipFile(BytesIO(source)) as archive:
                 parts = {name: archive.read(name) for name in archive.namelist()}
@@ -42,13 +73,14 @@ class DocxFiller:
                 or (name.startswith("word/header") and name.endswith(".xml"))
                 or (name.startswith("word/footer") and name.endswith(".xml"))
             ):
-                roots[name] = etree.fromstring(payload)
+                roots[name] = etree.fromstring(payload, SAFE_XML_PARSER)
 
         paragraphs = self._index_paragraphs(roots)
-        replacements: dict[str, list[tuple[int, int, str]]] = defaultdict(list)
+        replacements: dict[str, list[tuple[int, int, str | list[RichTextRun]]]] = defaultdict(list)
         for field in accepted:
-            value = request.values.get(field.id, "")
+            value: str | list[RichTextRun] = request.values.get(field.id, "")
             if DetectionMethod.CHECKBOX in field.methods:
+                assert isinstance(value, str)
                 selected = value.strip().casefold() in {
                     "checked",
                     "true",
@@ -58,6 +90,18 @@ class DocxFiller:
                     "có",
                 }
                 value = "☒" if selected else "☐"
+            elif field.type is FieldType.DATE:
+                assert isinstance(value, str)
+                value = format_date_value(value)
+            elif (
+                field.type is FieldType.LONG_TEXT
+                and isinstance(value, str)
+                and value.lstrip().startswith(("{", "["))
+            ):
+                try:
+                    value = rich_text_to_word_runs(validate_rich_text(value))
+                except RichTextError as exc:
+                    raise DocxFillError(f"{field.label}: {exc}") from exc
             for occurrence in field.occurrences:
                 replacements[occurrence.block_id].append((occurrence.start, occurrence.end, value))
 
@@ -78,18 +122,35 @@ class DocxFiller:
     def output_filename(self, filename: str) -> str:
         return f"{Path(filename).stem or 'document'}-filled.docx"
 
-    def _validate_values(self, fields: list[FieldCandidate], request: FillRequest) -> None:
+    def _validate_values(
+        self,
+        fields: list[FieldCandidate],
+        request: FillRequest,
+        *,
+        allow_missing_required: bool,
+    ) -> None:
         known = {field.id for field in fields}
         unexpected = set(request.values) - known
         if unexpected:
             raise DocxFillError("The request contains values for fields that are not accepted")
+        if allow_missing_required:
+            return
         missing = [
             field.label
             for field in fields
-            if field.rules.required and not request.values.get(field.id, "").strip()
+            if field.rules.required
+            and not self._has_content(field, request.values.get(field.id, ""))
         ]
         if missing:
             raise DocxFillError(f"Required fields are missing: {', '.join(missing)}")
+
+    def _has_content(self, field: FieldCandidate, value: str) -> bool:
+        if field.type is FieldType.LONG_TEXT and value.lstrip().startswith(("{", "[")):
+            try:
+                return bool(rich_text_to_plain_text(validate_rich_text(value)).strip())
+            except RichTextError as exc:
+                raise DocxFillError(f"{field.label}: {exc}") from exc
+        return bool(value.strip())
 
     def _index_paragraphs(self, roots: dict[str, etree._Element]) -> dict[str, etree._Element]:
         indexed: dict[str, etree._Element] = {}
@@ -124,16 +185,20 @@ class DocxFiller:
                         )
 
     def _apply_replacements(
-        self, paragraph: etree._Element, spans: list[tuple[int, int, str]]
+        self,
+        paragraph: etree._Element,
+        spans: list[tuple[int, int, str | list[RichTextRun]]],
     ) -> None:
         nodes, text_length = self._text_nodes(paragraph)
         if not nodes:
             if any(start != 0 or end != 0 for start, end, _ in spans):
                 raise DocxFillError("The field range cannot be mapped to an empty Word paragraph")
             for _, _, value in spans:
+                if isinstance(value, list):
+                    raise DocxFillError("Rich text needs a Word text run in the source template")
                 run = etree.SubElement(paragraph, f"{{{W}}}r")
                 text = etree.SubElement(run, f"{{{W}}}t")
-                text.text = value
+                self._set_text(text, value)
             return
         prior_start = text_length + 1
         for start, end, value in sorted(spans, key=lambda span: span[0], reverse=True):
@@ -164,14 +229,21 @@ class DocxFiller:
         return nodes, offset
 
     def _replace_range(
-        self, nodes: list[tuple[etree._Element, int, int]], start: int, end: int, value: str
+        self,
+        nodes: list[tuple[etree._Element, int, int]],
+        start: int,
+        end: int,
+        value: str | list[RichTextRun],
     ) -> None:
+        if isinstance(value, list):
+            self._replace_rich_text_range(nodes, start, end, value)
+            return
         if start == end:
             for node, node_start, node_end in nodes:
                 if node_start <= start <= node_end:
                     source = node.text or ""
                     offset = start - node_start
-                    node.text = source[:offset] + value + source[offset:]
+                    self._set_text(node, source[:offset] + value + source[offset:])
                     return
             raise DocxFillError("An empty field cannot be placed in this Word paragraph")
         touched = [
@@ -189,11 +261,11 @@ class DocxFiller:
             )
             if previous:
                 node, _ = previous
-                node.text = (node.text or "") + value
+                self._set_text(node, (node.text or "") + value)
                 return
             if following:
                 node, _ = following
-                node.text = value + (node.text or "")
+                self._set_text(node, value + (node.text or ""))
                 return
             raise DocxFillError("The field range cannot be mapped to Word text runs")
         first, first_start, _ = touched[0]
@@ -212,11 +284,128 @@ class DocxFiller:
                 self._set_text(node, "")
             self._set_text(last, suffix)
 
+    def _replace_rich_text_range(
+        self,
+        nodes: list[tuple[etree._Element, int, int]],
+        start: int,
+        end: int,
+        value: list[RichTextRun],
+    ) -> None:
+        if start == end:
+            raise DocxFillError("Rich text cannot replace an empty Word field range")
+        touched = [
+            (node, node_start, node_end)
+            for node, node_start, node_end in nodes
+            if node_start < end and node_end > start
+        ]
+        if not touched:
+            raise DocxFillError("The field range cannot be mapped to Word text runs")
+        first, first_start, _ = touched[0]
+        last, _, last_end = touched[-1]
+        first_text = first.text or ""
+        last_text = last.text or ""
+        prefix = first_text[: max(0, start - first_start)]
+        suffix = (
+            last_text[max(0, end - (last_end - len(last_text))) :]
+            if last is not first
+            else first_text[end - first_start :]
+        )
+        first_run = first.getparent()
+        if first_run is None:
+            raise DocxFillError("The field range cannot be mapped to a Word run")
+        self._set_text(first, prefix)
+        if first is not last:
+            for node, _, _ in touched[1:-1]:
+                self._set_text(node, "")
+            self._set_text(last, suffix)
+
+        parent = first_run.getparent()
+        if parent is None:
+            raise DocxFillError("The field range cannot be inserted into the Word document")
+        insertion_index = parent.index(first_run) + 1
+        justified = self._is_justified(first_run)
+        for run in self._rich_text_runs(first_run, value, justified=justified):
+            parent.insert(insertion_index, run)
+            insertion_index += 1
+        if first is last and suffix:
+            parent.insert(insertion_index, self._plain_text_run(first_run, suffix))
+
+    def _is_justified(self, run: etree._Element) -> bool:
+        paragraph = next(run.iterancestors(f"{{{W}}}p"), None)
+        if paragraph is None:
+            return False
+        alignment = paragraph.find("w:pPr/w:jc", NS)
+        return alignment is not None and alignment.get(f"{{{W}}}val") == "both"
+
+    def _rich_text_runs(
+        self, template_run: etree._Element, values: list[RichTextRun], *, justified: bool
+    ) -> list[etree._Element]:
+        rendered: list[etree._Element] = []
+        for value in values:
+            pieces = value.text.split("\n")
+            for index, piece in enumerate(pieces):
+                if not piece and index == 0 and len(pieces) > 1:
+                    continue
+                run = self._styled_text_run(template_run, value)
+                if index:
+                    if justified:
+                        # A tab before the break keeps Word from stretching that line.
+                        etree.SubElement(run, f"{{{W}}}tab")
+                    etree.SubElement(run, f"{{{W}}}br")
+                if piece:
+                    text = etree.SubElement(run, f"{{{W}}}t")
+                    self._set_text(text, piece)
+                rendered.append(run)
+        return rendered
+
+    def _plain_text_run(self, template_run: etree._Element, value: str) -> etree._Element:
+        run = etree.Element(f"{{{W}}}r")
+        properties = template_run.find("w:rPr", NS)
+        if properties is not None:
+            run.append(deepcopy(properties))
+        text = etree.SubElement(run, f"{{{W}}}t")
+        self._set_text(text, value)
+        return run
+
+    def _styled_text_run(self, template_run: etree._Element, value: RichTextRun) -> etree._Element:
+        run = self._plain_text_run(template_run, "")
+        properties = run.find("w:rPr", NS)
+        if properties is None:
+            properties = etree.Element(f"{{{W}}}rPr")
+            run.insert(0, properties)
+        if value.bold:
+            self._enable_toggle(properties, "b")
+        if value.italic:
+            self._enable_toggle(properties, "i")
+        text = run.find("w:t", NS)
+        if text is not None:
+            run.remove(text)
+        return run
+
+    def _enable_toggle(self, properties: etree._Element, name: str) -> None:
+        """Switch on a run toggle at its CT_RPr schema position (Word rejects bad order)."""
+        element = properties.find(f"w:{name}", NS)
+        if element is not None:
+            if f"{{{W}}}val" in element.attrib:
+                del element.attrib[f"{{{W}}}val"]
+            return
+        preceding = {"b": ("rStyle", "rFonts"), "i": ("rStyle", "rFonts", "b", "bCs")}[name]
+        position = 0
+        for index, child in enumerate(properties):
+            if child.tag in {f"{{{W}}}{tag}" for tag in preceding}:
+                position = index + 1
+        properties.insert(position, etree.Element(f"{{{W}}}{name}"))
+
     def _set_text(self, node: etree._Element, value: str) -> None:
         if node.tag == f"{{{W}}}sym":
             node.tag = f"{{{W}}}t"
             node.attrib.clear()
         node.text = value
+        space = "{http://www.w3.org/XML/1998/namespace}space"
+        if value[:1].isspace() or value[-1:].isspace():
+            node.set(space, "preserve")
+        elif space in node.attrib:
+            del node.attrib[space]
 
     def _archive(self, parts: dict[str, bytes]) -> bytes:
         stream = BytesIO()

@@ -13,6 +13,7 @@ from app.core.db import get_db
 from app.core.models import User
 from app.modules.auth.dependencies import get_current_user
 from app.modules.auth.schemas import CurrentUser
+from app.modules.templates.bindings import BindingError
 from app.modules.templates.schemas import (
     FillRequest,
     FormGeneration,
@@ -96,6 +97,8 @@ def update_form_generation(
 ) -> FormGeneration:
     try:
         generation = store.update(generation_id, patch)
+    except BindingError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except RevisionConflict as exc:
         raise HTTPException(
             status_code=409, detail="This form changed elsewhere. Reload before saving."
