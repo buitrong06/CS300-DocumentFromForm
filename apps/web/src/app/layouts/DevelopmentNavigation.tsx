@@ -6,6 +6,7 @@ export function DevelopmentNavigation() {
     <nav className="workspace-switcher" aria-label="Không gian phát triển">
       <NavLink to="/templates/import">Trích xuất trường</NavLink>
       <NavLink to="/prototype">Prototype PA02</NavLink>
+      <NavLink to="/app">Figma App (mới)</NavLink>
     </nav>
   );
 }
