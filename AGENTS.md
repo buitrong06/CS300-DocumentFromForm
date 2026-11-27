@@ -11,7 +11,7 @@
 - **Architecture Baseline ([`docs/architecture/c4/README.md`](docs/architecture/c4/README.md), [`DEC-001`](docs/management/DECISIONS.md)–[`DEC-004`](docs/management/DECISIONS.md)):**
   - **Backend (`apps/api/`):** Python 3.12 + FastAPI **Modular Monolith** organized around C3 Backend components (`presets`, `templates`, `drafts`, `tasks`, `submissions`, `workspaces`, `rendering`, `llm`, `auth`).
   - **Frontend (`apps/web/`):** React + TypeScript + Vite organized by **Feature Folders** (`src/app/` shell & session, `src/shared/` common UI & API client, `src/features/<slice>/` per vertical slice).
-  - **Infrastructure:** PostgreSQL 16 (structured metadata, `JSONB` preset/field payloads, immutable snapshots — [`DEC-009`](docs/management/DECISIONS.md), [`DEC-010`](docs/management/DECISIONS.md)), Local File Storage / Cloudflare R2 (`file_artifacts` for binary `.docx`/`.pdf`), LibreOffice Headless (bounded subprocess for PDF preview/export — [`DEC-003`](docs/management/DECISIONS.md)), Firebase Authentication (with local-dev auth bypass during Week 0 — [`DEC-013`](docs/management/DECISIONS.md)), and optional Ollama-compatible LLM (advisory semantic feedback only).
+  - **Infrastructure:** PostgreSQL 16 (structured metadata, `JSONB` preset/field payloads, immutable snapshots — [`DEC-009`](docs/management/DECISIONS.md), [`DEC-010`](docs/management/DECISIONS.md)), Local File Storage / Cloudflare R2 (`file_artifacts` for binary `.docx`/`.pdf`), LibreOffice Headless for PDF preview/export (bounded local subprocess by default — [`DEC-003`](docs/management/DECISIONS.md); optional self-hosted Gotenberg `renderer` container when `RENDER_SERVICE_URL` is set, with no fallback — [`DEC-022`](docs/management/DECISIONS.md)), Firebase Authentication (with local-dev auth bypass during Week 0 — [`DEC-013`](docs/management/DECISIONS.md)), and optional Ollama-compatible LLM (advisory semantic feedback only).
 
 ---
 
@@ -118,7 +118,7 @@ Violating any rule below is a critical bug:
    - Approving Child Subtasks NEVER auto-updates, auto-submits, or auto-approves the Parent Task.
    - Integrating delegated results into a Parent Draft happens strictly via explicit **`Apply`** actions that check `document_drafts.version` (optimistic locking, `409 Conflict` on mismatch), warn before overwriting non-empty values, and record provenance in `field_apply_logs` (`value_before`, `value_after`, `apply_mode: direct | combine | rewrite`) + `field_apply_sources`.
 10. **Short DB Transactions & Organizational Continuity (`DEC-009`, `DEC-012`):**
-    - Never hold an open database transaction or row lock while calling LibreOffice Headless or Ollama LLM.
+    - Never hold an open database transaction or row lock while calling LibreOffice Headless (local subprocess or `renderer` service) or Ollama LLM.
     - Never hard-delete historical users, tasks, drafts, or submissions (`users.is_active = false`, `ON DELETE RESTRICT`). Reassigning work cancels the old `task_assignments` row (`status = 'cancelled'`) and creates a new assignment + draft.
 
 ---

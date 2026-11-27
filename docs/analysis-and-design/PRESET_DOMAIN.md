@@ -34,7 +34,7 @@ A **FormattingPreset** is represented in YAML (for import/export and built-in fi
 
 ## 3. MVP Renderer Execution Boundary
 
-While the Preset YAML schema captures the full richness of administrative regulations (such as Decree 30/2020/ND-CP), the **MVP Document Processing Engine** (`python-docx` + `docxtpl` + `LibreOffice Headless`) enforces a clear boundary:
+While the Preset YAML schema captures the full richness of administrative regulations (such as Decree 30/2020/ND-CP), the **MVP Document Processing Engine** (`python-docx` + `docxtpl` + `LibreOffice Headless`) enforces a clear boundary. LibreOffice runs as a local subprocess by default (`DEC-003`) or inside the optional Gotenberg `renderer` container when `RENDER_SERVICE_URL` is set (`DEC-022`):
 
 ### 3.1. Mandatory in MVP
 - **`core`**: Page size/orientation/margins, default font, and all role-based paragraph/character `styles`.
