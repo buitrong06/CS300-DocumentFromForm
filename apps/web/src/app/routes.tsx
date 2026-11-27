@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Navigate, Route, Routes, useParams } from "react-router-dom";
+import { Navigate, Route, Routes, useMatch, useParams } from "react-router-dom";
 
 import { DevelopmentNavigation } from "./layouts/DevelopmentNavigation";
 
@@ -34,10 +34,19 @@ const PrototypeApp = lazy(async () => {
   return { default: module.PrototypeApp };
 });
 
+// New Figma-based sidebar implementation — does not override existing routes
+const FigmaApp = lazy(async () => {
+  const module = await import("../figma-app/FigmaApp");
+  return { default: module.FigmaApp };
+});
+
 export function AppRoutes() {
+  const isPrototype = useMatch("/prototype");
+  const isFigmaApp = useMatch("/app/*");
+
   return (
     <>
-      <DevelopmentNavigation />
+      {!isPrototype && !isFigmaApp && <DevelopmentNavigation />}
       <Suspense fallback={<p className="route-loading">Đang tải…</p>}>
         <Routes>
           <Route path="/library" element={<LibraryPage />} />
@@ -46,6 +55,7 @@ export function AppRoutes() {
           <Route path="/templates/:templateId" element={<TemplateRoute />} />
           <Route path="/drafts/:draftId" element={<DraftRoute />} />
           <Route path="/prototype" element={<PrototypeApp />} />
+          <Route path="/app/*" element={<FigmaApp />} />
           <Route path="*" element={<Navigate to="/templates/new" replace />} />
         </Routes>
       </Suspense>

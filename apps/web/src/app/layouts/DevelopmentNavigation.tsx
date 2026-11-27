@@ -7,6 +7,7 @@ export function DevelopmentNavigation() {
       <NavLink to="/templates/new">Tạo Mẫu biểu</NavLink>
       <NavLink to="/library">Thư viện</NavLink>
       <NavLink to="/prototype">Prototype PA02 (mock)</NavLink>
+      <NavLink to="/app">Figma App (mới)</NavLink>
     </nav>
   );
 }
