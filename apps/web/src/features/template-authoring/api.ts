@@ -22,7 +22,7 @@ export async function uploadTemplate(file: File): Promise<TemplateDraft> {
     method: "POST",
     headers: {
       "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "X-Filename": file.name,
+      "X-Filename": encodeURIComponent(file.name),
     },
     body: file,
   });

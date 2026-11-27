@@ -38,6 +38,23 @@ describe("canonical Template authoring API", () => {
     );
   });
 
+  it("percent-encodes a Vietnamese filename so the browser accepts the header", async () => {
+    // Building real Headers reproduces the browser rule that a plain fetch mock skips.
+    const fetch = vi.fn((_url: string, init: RequestInit) => {
+      const sent = new Headers(init.headers).get("X-Filename");
+      return Promise.resolve(jsonResponse({ id: 8, sent }, 201));
+    });
+    vi.stubGlobal("fetch", fetch);
+    const filename = "Mẫu tờ trình đề nghị (số 1).docx";
+
+    const result = (await uploadTemplate(new File(["DOCX"], filename))) as unknown as {
+      sent: string;
+    };
+
+    expect(result.sent).toBe(encodeURIComponent(filename));
+    expect(decodeURIComponent(result.sent)).toBe(filename);
+  });
+
   it("uses canonical review, preset, publication, and preview routes", async () => {
     const fetch = vi
       .fn()
