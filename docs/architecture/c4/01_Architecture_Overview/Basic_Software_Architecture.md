@@ -14,7 +14,7 @@
 | Tier | Components | Execution location | Language and frameworks |
 |---|---|---|---|
 | Presentation | Template Editor, Form Filler, Split-screen Live Preview, Task Dashboard, Discussion/Notification UI | End-user browser; static frontend deployed on Cloudflare Pages (proposed) | TypeScript, React, Vite, React Hook Form, Zod, Tiptap, PDF.js; optional Dexie/IndexedDB |
-| Application | FastAPI routers, authentication/authorization checks, template/preset logic, document/draft service, tasks/delegation, immutable submissions, review/manual Apply, verification, document processing | A single modular backend process/container on Docker/VPS | Python, FastAPI, Pydantic, SQLAlchemy, python-docx, docxtpl, lxml, LibreOffice Headless |
+| Application | FastAPI routers, authentication/authorization checks, template/preset logic, document/draft service, tasks/delegation, immutable submissions, review/manual Apply, verification, document processing | A single modular backend process/container on Docker/VPS | Python, FastAPI, Pydantic, SQLAlchemy, python-docx, docxtpl, lxml, LibreOffice Headless (local subprocess, or optional Gotenberg `renderer` container via `RENDER_SERVICE_URL`) |
 | Data | Structured metadata and transactional records; original DOCX/templates, generated DOCX/PDF, snapshots | PostgreSQL and R2 or local filesystem for MVP | PostgreSQL, S3-compatible storage adapter |
 | External services | Sign-in and ID-token verification; semantic content-check inference | Provider-managed services outside the application | Firebase Authentication, Ollama-compatible LLM API (implementation to be finalized) |
 
@@ -41,7 +41,7 @@ The frontend is presented as a web application.
 | Task & Delegation | Create tasks and independent per-recipient assignments; delegate nonempty field subsets into internal workspace subtasks | PostgreSQL, authorization |
 | Submission & Review | Create immutable submission snapshots, track feedback/approvals and manually apply authorized child fields into a parent draft with version/provenance checks | PostgreSQL transactions, object storage |
 | Verification | Execute deterministic field checks; optionally call LLM for evidence-backed advisory findings | Rule engine, external LLM API |
-| Document Processing Engine | Parse/modify DOCX at field anchors; generate DOCX and authoritative PDF; provide rendered preview | python-docx, docxtpl, lxml, LibreOffice |
+| Document Processing Engine | Parse/modify DOCX at field anchors; generate DOCX and authoritative PDF; provide rendered preview | python-docx, docxtpl, lxml, LibreOffice (local subprocess by default; optional Gotenberg `renderer` service, `DEC-022`) |
 | Discussion & Notification | Record task-scoped communication, progress events and reminders (if enabled) | PostgreSQL, REST/WebSocket, optional scheduler |
 | Persistance & File Gateways | Provide an endpoint for components to communicate with the data | SQLAlchemy
 
@@ -99,7 +99,7 @@ The frontend is presented as a web application.
 - **Integrity:** Task status changes, snapshot creation and Apply-to-parent should be transactional. Optimistic revision checks prevent silent overwrites.
 - **Maintainability:** Routers, application services, repositories and external gateways have separate responsibilities, even though deployed as one backend.
 - **Document fidelity:** Use a single verified conversion pipeline; include DOCX/PDF regression fixtures and reject unsupported cases rather than silently mangling them.
-- **Availability:** Back up PostgreSQL and stored files; isolate potentially unsafe LibreOffice processing in a limited-permission runtime.
+- **Availability:** Back up PostgreSQL and stored files; isolate potentially unsafe LibreOffice processing in a limited-permission runtime. The optional Gotenberg `renderer` container (`DEC-022`, `RENDER_SERVICE_URL`) moves conversion out of the API process; the local subprocess (`DEC-003`) remains the default.
 - **Performance:** Debounce autosave and preview renders; allow cached or background rendering where needed, without changing the authoritative output contract.
 
 ## 6. Status and scope of this document

@@ -30,6 +30,10 @@ coverage/
 *.tsbuildinfo
 .~lock.*#
 
+# Locally supplied (licensed) renderer fonts
+fonts/*
+!fonts/README.md
+
 # Storage / Temp documents
 tmp/
 storage/

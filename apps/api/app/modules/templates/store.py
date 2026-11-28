@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
 from uuid import uuid4
 
@@ -9,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.contracts.templates import TemplateFieldType, TemplateSourceType
 from app.core.models import DocumentTemplate, FileArtifact, TemplateField
+from app.modules.templates.bindings import validate_accepted_bindings
 from app.modules.templates.schemas import (
     CandidateStatus,
     FieldCandidate,
@@ -32,6 +34,25 @@ class FormGenerationStore:
         self.storage_dir = storage_dir
 
     def create(self, generation: FormGeneration, source: bytes) -> FormGeneration:
+        return self.create_template(
+            generation,
+            source,
+            source_type=TemplateSourceType.UPLOADED_DOCX,
+        )
+
+    def create_template(
+        self,
+        generation: FormGeneration,
+        source: bytes,
+        *,
+        source_type: TemplateSourceType,
+        preset_id: int | None = None,
+        document_type_key: str | None = None,
+        name: str | None = None,
+        org_constants: Mapping[str, object] | None = None,
+        version: int = 1,
+    ) -> FormGeneration:
+        """Persist a draft Template plus its source DOCX and candidate state."""
         storage_key = f"template-sources/{uuid4()}.docx"
         source_path = self.storage_dir / storage_key
         file_created = False
@@ -51,10 +72,14 @@ class FormGenerationStore:
                 template = DocumentTemplate(
                     owner_id=self.owner_id,
                     slug=generation.id,
-                    name=generation.filename,
+                    name=name or generation.filename,
+                    version=version,
                     status="draft",
-                    source_type=TemplateSourceType.UPLOADED_DOCX,
+                    source_type=source_type,
+                    preset_id=preset_id,
+                    document_type_key=document_type_key,
                     source_artifact_id=artifact.id,
+                    org_constants=dict(org_constants or {}),
                     created_at=generation.created_at,
                 )
                 self.db.add(template)
@@ -104,6 +129,7 @@ class FormGenerationStore:
             generation = self._generation(template, artifact)
             if generation.revision != patch.revision:
                 raise RevisionConflict
+            validate_accepted_bindings(generation.blocks, patch.candidates)
             generation.candidates = patch.candidates
             generation.revision += 1
             has_proposals = any(
@@ -125,7 +151,6 @@ class FormGenerationStore:
                 DocumentTemplate.slug == generation_id,
                 DocumentTemplate.version == 1,
                 DocumentTemplate.status == "draft",
-                DocumentTemplate.source_type == TemplateSourceType.UPLOADED_DOCX,
                 DocumentTemplate.extraction_state.is_not(None),
             )
         )
@@ -183,6 +208,7 @@ class FormGenerationStore:
         field.bindings = [
             occurrence.model_dump(mode="json") for occurrence in candidate.occurrences
         ]
+        field.choice_options = [option.model_dump(mode="json") for option in candidate.options]
         field.automatic_rules = [
             {"rule_type": rule_type, "value": value}
             for rule_type, value in candidate.rules.model_dump(

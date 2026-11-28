@@ -28,6 +28,7 @@ class CandidateStatus(StrEnum):
 
 class DetectionMethod(StrEnum):
     MARKER = "marker"
+    BRACKET = "bracket"
     COMMENT = "comment"
     DOTTED_LINE = "dotted_line"
     UNDERSCORE = "underscore"

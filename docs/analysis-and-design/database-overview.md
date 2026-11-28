@@ -190,6 +190,8 @@ erDiagram
         jsonb org_constants
         jsonb locked_segments
         boolean checklist_approved
+        jsonb extraction_state "nullable; extraction and review state"
+        timestamptz published_at "nullable; set on publication"
         timestamptz created_at
     }
     template_fields {
@@ -204,16 +206,19 @@ erDiagram
         jsonb bindings "1 or more document positions"
         jsonb automatic_rules "deterministic length/range/format rules"
         jsonb semantic_criteria "LLM criteria for this field"
+        jsonb choice_options "allowed values of a choice field"
     }
 ```
 
 | Entity | Key Attributes & Constraints | Relationships & Domain Rules |
 | :--- | :--- | :--- |
 | **`formatting_presets`** | `id` (PK), `slug` (NOT NULL), `version` (NOT NULL), `UNIQUE (slug, version)`, `parent_preset_id` (self-FK), `status` (`reviewing` \| `published`), `core`, `advanced`, `document_types`, `unruled`, `evidence` (all `jsonb`) | Saving a preset creates a new immutable `version` (`UC-A01`). Separating `evidence` into its own `jsonb` column allows the Renderer to `SELECT core, advanced, document_types` without loading regulatory quotes. |
-| **`document_templates`** | `id` (PK), `owner_id` (FK → `users.id`), `slug` (NOT NULL), `version` (NOT NULL), `UNIQUE (slug, version)`, `status` (`draft` \| `published` \| `archived`), `source_type` (`preset` \| `uploaded_docx`), `preset_id` (nullable FK), `source_artifact_id` (nullable FK), `org_constants` (`jsonb`), `locked_segments` (`jsonb`), `checklist_approved` (`boolean`), `CHECK ((source_type = 'preset' AND preset_id IS NOT NULL) OR (source_type = 'uploaded_docx' AND source_artifact_id IS NOT NULL))` | Supports both preset-generated skeletons (`source_type = 'preset'`) and uploaded DOCX files (`source_type = 'uploaded_docx'`, `UC-A02`). Owned by `owner_id` (`DEC-015`) and reusable across personal documents (`UC-C01`) or tasks in any workspace where the owner holds `can_assign` (`UC-B01`). `slug` groups all versions of the same template family; tasks and drafts bind to a specific `document_templates.id` version row. |
-| **`template_fields`** | `id` (PK), `template_id` (FK → `document_templates.id` ON DELETE CASCADE), `field_key` (NOT NULL), `UNIQUE (template_id, field_key)`, `UNIQUE (template_id, id)`, `label`, `field_type`, `is_required`, `instructions`, `display_order`, `bindings` (`jsonb`), `automatic_rules` (`jsonb`), `semantic_criteria` (`jsonb`) | Stores typed fields configured in `UC-A03` and checklist rules approved in `UC-A04`. `bindings` is a JSON array because one field can map to multiple positions in the document. |
+| **`document_templates`** | `id` (PK), `owner_id` (FK → `users.id`), `slug` (NOT NULL), `version` (NOT NULL), `UNIQUE (slug, version)`, `status` (`draft` \| `published` \| `archived`), `source_type` (`preset` \| `uploaded_docx`), `preset_id` (nullable FK), `source_artifact_id` (nullable FK), `org_constants` (`jsonb`), `locked_segments` (`jsonb`), `checklist_approved` (`boolean`), `extraction_state` (nullable `jsonb`), `published_at` (nullable `timestamptz`), `CHECK ((source_type = 'preset' AND preset_id IS NOT NULL) OR (source_type = 'uploaded_docx' AND source_artifact_id IS NOT NULL))` | Supports both preset-generated skeletons (`source_type = 'preset'`) and uploaded DOCX files (`source_type = 'uploaded_docx'`, `UC-A02`). Owned by `owner_id` (`DEC-015`) and reusable across personal documents (`UC-C01`) or tasks in any workspace where the owner holds `can_assign` (`UC-B01`). `slug` groups all versions of the same template family; tasks and drafts bind to a specific `document_templates.id` version row. |
+| **`template_fields`** | `id` (PK), `template_id` (FK → `document_templates.id` ON DELETE CASCADE), `field_key` (NOT NULL), `UNIQUE (template_id, field_key)`, `UNIQUE (template_id, id)`, `label`, `field_type`, `is_required`, `instructions`, `display_order`, `bindings` (`jsonb`), `automatic_rules` (`jsonb`), `semantic_criteria` (`jsonb`), `choice_options` (`jsonb`, NOT NULL) | Stores typed fields configured in `UC-A03` and checklist rules approved in `UC-A04`. `bindings` is a JSON array because one field can map to multiple positions in the document. |
 
 Uploaded DOCX drafts created by Form Extraction use `document_templates.extraction_state` (nullable `jsonb`) for normalized document blocks, candidate review state, warnings, and the optimistic edit revision. The API saves accepted candidates as `template_fields` in the same transaction. The edit revision is separate from the template family's `version`.
+
+Publishing a template sets `document_templates.published_at` (`UC-A05`). `template_fields.choice_options` is a JSON array of the allowed values of a `choice` field; it is empty for other field types.
 
 ---
 
@@ -427,7 +432,7 @@ erDiagram
 | **Task Discussion & Audit Timeline (`UC-B07`, `DEC-018`)** | Chronological comments per task (with `mentions` JSONB spans); reverse-chronological audit events per task or workspace | FK constraints to `workspaces`, `tasks`, `users` (`ON DELETE RESTRICT` on actors/authors) | Composite indexes `task_comments (task_id, created_at asc)` and `activity_events (task_id, occurred_at desc)` / `(workspace_id, occurred_at desc)` |
 
 ### 5.3. Transaction & Concurrency Rules
-1. **Short Transactions Only (`lock-short-transactions`)**: Never hold an open database transaction or row lock while invoking **LibreOffice Headless** (`UC-A06` preview / `UC-A09` export) or **Ollama LLM** (`UC-A07` semantic check). Read the draft state, close the transaction, run external inference/rendering, then open a millisecond transaction to persist results.
+1. **Short Transactions Only (`lock-short-transactions`)**: Never hold an open database transaction or row lock while invoking **LibreOffice Headless**, either the local subprocess or the optional Gotenberg `renderer` service (`DEC-003`, `DEC-022`) (`UC-A06` preview / `UC-A09` export), or **Ollama LLM** (`UC-A07` semantic check). Read the draft state, close the transaction, run external inference/rendering, then open a millisecond transaction to persist results.
 2. **Optimistic Concurrency Control**: Updating `document_drafts` (via autosave `UC-A06` or manual `Apply` `UC-B06`) must check and increment `version`:
    ```sql
    update document_drafts

@@ -12,6 +12,7 @@ from app.modules.templates.schemas import FormGeneration
 from app.modules.templates.services.docx_analyzer import NS, W
 
 DOTTED_BLANK_RE = re.compile(r"(?:[.…·]\s*){8,}")
+SAFE_XML_PARSER = etree.XMLParser(resolve_entities=False, no_network=True)
 
 
 class DocxPreviewError(ValueError):
@@ -24,7 +25,7 @@ class DocxPreviewRenderer:
     def render(self, source: bytes, generation: FormGeneration) -> str:
         try:
             with ZipFile(BytesIO(source)) as archive:
-                document = etree.fromstring(archive.read("word/document.xml"))
+                document = etree.fromstring(archive.read("word/document.xml"), SAFE_XML_PARSER)
         except (KeyError, BadZipFile, etree.XMLSyntaxError) as exc:
             raise DocxPreviewError("The source DOCX cannot be rendered") from exc
 
@@ -430,8 +431,9 @@ class DocxPreviewRenderer:
             raw_size = size.get(f"{{{W}}}val") if size is not None else None
             if raw_size:
                 styles.append(f"font-size:{int(raw_size) / 2:g}pt")
-            if color is not None and color.get(f"{{{W}}}val") not in (None, "auto"):
-                styles.append(f"color:#{color.get(f'{{{W}}}val')}")
+            raw_color = color.get(f"{{{W}}}val") if color is not None else None
+            if isinstance(raw_color, str) and re.fullmatch(r"[0-9a-fA-F]{6}", raw_color):
+                styles.append(f"color:#{raw_color}")
         values: list[str] = []
         for node in run.iter():
             if node.tag == f"{{{W}}}t":

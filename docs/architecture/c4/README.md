@@ -58,4 +58,5 @@ The previous Architecture Overview was available only as PNG, so it is included 
 ## Tracked design decisions
 
 - Deployment target (Cloudflare Pages, VPS/Docker, R2, Firebase Auth with local-dev fallback), LibreOffice subprocess isolation, and Tiptap form-field scope are recorded in [`docs/management/DECISIONS.md`](../../management/DECISIONS.md) (`DEC-001`–`DEC-009`).
+- PDF conversion runs LibreOffice as a bounded local subprocess by default (`DEC-003`). When `RENDER_SERVICE_URL` is set, the API instead calls the optional self-hosted Gotenberg `renderer` container (`docker-compose.yml`), which runs LibreOffice, with no fallback to the local subprocess (`DEC-022`). The C2 and C3 diagrams label the engine as LibreOffice and do not draw this optional container.
 - Remaining open questions are tracked in [`docs/management/ISSUES.md`](../../management/ISSUES.md).

@@ -27,6 +27,7 @@ from app.modules.templates.schemas import (
 W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 V = "urn:schemas-microsoft-com:vml"
 NS = {"w": W, "v": V}
+SAFE_XML_PARSER = etree.XMLParser(resolve_entities=False, no_network=True)
 MARKER_RE = re.compile(r"\{\{\s*([^{}\n]{1,120}?)\s*\}\}")
 UNDERSCORE_RE = re.compile(r"_{3,}")
 DOTTED_RE = re.compile(r"(?:[.…·]\s*){3,}")
@@ -34,7 +35,18 @@ CHECKBOX_RE = re.compile(r"[□☐☑☒▢■□]")
 BOXED_CHARACTER_RE = re.compile(r"☐{6,}")
 REFERENCE_PLACEHOLDER_RE = re.compile(r"(?:…{2,}|\.{6,}|·{2,})[.]?")
 TAB_BLANK_RE = re.compile(r"\t+")
-DATE_TERMS = ("ngày", "tháng", "năm", "date", "dob", "sinh")
+ENDS_WITH_BLANK_RE = re.compile(r"(?:…|[.·_]{2})[.…·_]*\s*$")
+# Inside a date a single ellipsis already is a blank. It never ends in whitespace.
+DATE_BLANK = r"(?:…|[._·]{2})(?:[ \t]?[.…·_])*"
+DATE_CHAIN_RE = re.compile(
+    rf"{DATE_BLANK}\s*(?:tháng|month)\s*{DATE_BLANK}\s*(?:năm|year)"
+    rf"(?:\s*20(?=\s*[.…·_]))?\s*{DATE_BLANK}",
+    flags=re.IGNORECASE,
+)
+MAX_BRACKET_CHARS = 600
+MAX_BRACKET_LABEL = 80
+LONG_BRACKET_HINTS = ("chi tiết", "trình bày", "mở đầu", "nêu ")
+DATE_TERMS = ("ngày", "tháng", "năm", "date", "dob")
 MONEY_TERMS = ("tiền", "kinh phí", "chi phí", "đồng", "vnđ", "vnd", "amount", "budget")
 NUMBER_TERMS = ("số", "number", "mã", "code", "quantity", "số lượng")
 LONG_TERMS = ("nội dung", "mô tả", "lý do", "trình bày", "ý kiến", "summary", "description")
@@ -60,7 +72,7 @@ class DocxAnalyzer:
             raise DocxAnalysisError("Only .docx files are supported")
         try:
             with zipfile.ZipFile(BytesIO(payload)) as archive:
-                document = etree.fromstring(archive.read("word/document.xml"))
+                document = etree.fromstring(archive.read("word/document.xml"), SAFE_XML_PARSER)
                 comments = self._read_comments(archive)
                 headers = self._read_parts(archive, "word/header")
                 footers = self._read_parts(archive, "word/footer")
@@ -142,14 +154,19 @@ class DocxAnalyzer:
         for name in archive.namelist():
             if name.startswith(prefix) and name.endswith(".xml"):
                 try:
-                    parts.append((name.rsplit("/", 1)[-1], etree.fromstring(archive.read(name))))
+                    parts.append(
+                        (
+                            name.rsplit("/", 1)[-1],
+                            etree.fromstring(archive.read(name), SAFE_XML_PARSER),
+                        )
+                    )
                 except etree.XMLSyntaxError:
                     continue
         return parts
 
     def _read_comments(self, archive: zipfile.ZipFile) -> dict[str, str]:
         try:
-            root = etree.fromstring(archive.read("word/comments.xml"))
+            root = etree.fromstring(archive.read("word/comments.xml"), SAFE_XML_PARSER)
         except KeyError:
             return {}
         comments: dict[str, str] = {}
@@ -252,6 +269,7 @@ class DocxAnalyzer:
         candidates: list[FieldCandidate] = []
         warnings: list[AnalysisWarning] = []
         by_label: dict[str, FieldCandidate] = {}
+        bracket_labels: dict[str, int] = defaultdict(int)
         comment_by_block: dict[str, list[tuple[CommentAnchor, str]]] = defaultdict(list)
         for anchor in anchors:
             comment_text = comments.get(anchor.comment_id, "").strip()
@@ -301,8 +319,18 @@ class DocxAnalyzer:
                 self._merge_or_append(candidates, by_label, candidate, allow_merge=True)
             if marker_found:
                 continue
-            reference_spans = []
+            bracket_spans: list[tuple[int, int]] = []
+            for start, end in self._bracket_spans(block.text):
+                bracket = self._bracket_candidate(block, start, end, bracket_labels)
+                if bracket is None:
+                    continue
+                self._attach_comments(bracket, comment_by_block.get(block.id, []))
+                candidates.append(bracket)
+                bracket_spans.append((start, end))
+            reference_spans: list[tuple[int, int]] = []
             for match in REFERENCE_PLACEHOLDER_RE.finditer(block.text):
+                if self._overlaps(match.start(), match.end(), bracket_spans):
+                    continue
                 reference = re.match(r"\s*\((\d+)\)", block.text[match.end() :])
                 if not reference:
                     continue
@@ -323,6 +351,8 @@ class DocxAnalyzer:
                 self._merge_or_append(candidates, by_label, candidate, allow_merge=True)
                 reference_spans.append((match.start(), match.end()))
             for match in CHECKBOX_RE.finditer(block.text):
+                if self._overlaps(match.start(), match.end(), bracket_spans):
+                    continue
                 label = self._checkbox_label(block.text, match.start())
                 if label:
                     group_label = self._neighboring_table_cell_label(block, blocks)
@@ -345,6 +375,13 @@ class DocxAnalyzer:
                     )
                     self._merge_or_append(candidates, by_label, candidate, allow_merge=False)
             for match in TAB_BLANK_RE.finditer(block.text):
+                if self._overlaps(match.start(), match.end(), bracket_spans):
+                    continue
+                # Dots before the tab are the blank; text after it is already filled in.
+                if ENDS_WITH_BLANK_RE.search(block.text[: match.start()]):
+                    continue
+                if self._is_prefilled(block.text[match.end() :]):
+                    continue
                 label = self._label_before_blank(block.text, match.start())
                 if label and (
                     block.text[: match.start()].rstrip().endswith(":")
@@ -354,29 +391,33 @@ class DocxAnalyzer:
                     following_dots = re.match(r"\s*(?:[.…·]\s*){3,}", block.text[end:])
                     method = DetectionMethod.EMPTY_TABLE_CELL
                     if following_dots:
-                        end += following_dots.end()
+                        end += len(following_dots.group(0).rstrip())
                         method = DetectionMethod.DOTTED_LINE
                     candidate = self._new_candidate(
                         block, match.start(), end, label, method, 0.68 if following_dots else 0.58
                     )
                     candidates.append(candidate)
-            blank_spans = self._blank_spans(block.text)
+            claimed = [*reference_spans, *bracket_spans]
             blank_spans = [
                 span
-                for span in blank_spans
-                if not any(start < span[1] and end > span[0] for start, end in reference_spans)
+                for span in self._blank_spans(block.text)
+                if not self._overlaps(span[0], span[1], claimed)
             ]
-            date_groups = self._date_spans(block.text, blank_spans)
+            date_groups = [
+                group
+                for group in self._date_spans(block.text)
+                if not self._overlaps(group[0], group[1], claimed)
+            ]
+            dated = [(start, end) for start, end, _ in date_groups]
             for start, end, label in date_groups:
                 candidate = self._new_candidate(
                     block, start, end, label, DetectionMethod.DOTTED_LINE, 0.72
                 )
+                candidate.type = FieldType.DATE
+                candidate.options = []
                 candidates.append(candidate)
             for start, end, method in blank_spans:
-                if any(
-                    group_start <= start and end <= group_end
-                    for group_start, group_end, _ in date_groups
-                ):
+                if self._overlaps(start, end, dated):
                     continue
                 if method is DetectionMethod.DOTTED_LINE and self._is_reference_dots(
                     block.text, start, end
@@ -457,11 +498,16 @@ class DocxAnalyzer:
     ) -> None:
         handled_ids = self._detect_repeating_table_fields(blocks, candidates)
         cells = [block for block in blocks if block.kind == "table_cell"]
+        # Spacing paragraphs in a cell that already has text are layout, not blanks.
+        occupied = {self._cell_path(cell.id) for cell in cells if cell.text.strip()}
+        visited: set[str] = set()
         for index, cell in enumerate(cells):
             if cell.id in handled_ids:
                 continue
-            if cell.text.strip():
+            cell_path = self._cell_path(cell.id)
+            if cell_path in occupied or cell_path in visited:
                 continue
+            visited.add(cell_path)
             if any(
                 occurrence.block_id == cell.id
                 for field in candidates
@@ -630,7 +676,7 @@ class DocxAnalyzer:
             for match in UNDERSCORE_RE.finditer(text)
         ]
         spans.extend(
-            (match.start(), match.end(), DetectionMethod.DOTTED_LINE)
+            (match.start(), self._trimmed_end(match), DetectionMethod.DOTTED_LINE)
             for match in DOTTED_RE.finditer(text)
         )
         spans.sort()
@@ -650,6 +696,10 @@ class DocxAnalyzer:
                     continue
             merged.append((start, end, method))
         return merged
+
+    def _trimmed_end(self, match: re.Match[str]) -> int:
+        """A blank ends at its last placeholder character, not in the following space."""
+        return match.start() + len(match.group(0).rstrip())
 
     def _checkbox_label(self, text: str, position: int) -> str | None:
         first_checkbox = CHECKBOX_RE.search(text)
@@ -688,33 +738,94 @@ class DocxAnalyzer:
             option = " ".join(words[-5:])
         return self._normal_label(option) if option else None
 
-    def _date_spans(
-        self, text: str, spans: list[tuple[int, int, DetectionMethod]]
-    ) -> list[tuple[int, int, str]]:
+    def _date_spans(self, text: str) -> list[tuple[int, int, str]]:
+        """Group only "<day> tháng <month> năm <year>"; never other words between blanks."""
         groups: list[tuple[int, int, str]] = []
-        for index, (start, end, _) in enumerate(spans):
-            if any(group_start <= start <= group_end for group_start, group_end, _ in groups):
-                continue
-            window_end = min(len(text), end + 100)
-            window = text[start:window_end]
-            if not re.search(r"tháng.{0,24}năm|month.{0,24}year", window, flags=re.IGNORECASE):
-                continue
-            next_field = re.search(r";|\s\d{1,2}\.\s+", window)
-            limit = start + next_field.start() if next_field else window_end
-            last = end
-            for next_start, next_end, _ in spans[index + 1 :]:
-                if next_start > limit:
-                    break
-                last = next_end
-            label_prefix = text[max(0, start - 60) : start]
+        for match in DATE_CHAIN_RE.finditer(text):
+            start = match.start()
             label_match = re.search(
                 r"([^;\t\n]*?(?:ngày|date)[^;\t\n]*?)\s*[:：]?\s*$",
-                label_prefix,
+                text[max(0, start - 60) : start],
                 flags=re.IGNORECASE,
             )
-            label = self._normal_label(label_match.group(1)) if label_match else "Ngày, tháng, năm"
-            groups.append((start, last, label))
+            raw = re.sub(r"^[\s.…·_,\d]+", "", label_match.group(1)) if label_match else ""
+            # A bare "ngày", or a prefix that is really a sentence, makes a poor label.
+            generic = (
+                raw.strip().casefold() in {"", "ngày", "date"}
+                or len(raw) > 40
+                or bool(re.search(DATE_BLANK, raw))
+                or "[" in raw
+                or "]" in raw
+            )
+            label = "Ngày, tháng, năm" if generic else self._normal_label(raw)
+            groups.append((start, match.end(), label))
         return groups
+
+    def _overlaps(self, start: int, end: int, spans: list[tuple[int, int]]) -> bool:
+        return any(start < other_end and end > other_start for other_start, other_end in spans)
+
+    def _cell_path(self, block_id: str) -> str:
+        return re.sub(r"/p:\d+$", "", block_id)
+
+    def _is_prefilled(self, after_tab: str) -> bool:
+        """True when ordinary text, not another label or blank, follows a tab."""
+        segment = after_tab.split("\t", 1)[0].strip()
+        return bool(segment) and not (
+            re.match(r"[.…·_]|\d+\.", segment) or ":" in segment or "：" in segment
+        )
+
+    def _bracket_spans(self, text: str) -> list[tuple[int, int]]:
+        """Outermost balanced [...] ranges; unmatched brackets are ignored."""
+        opened: list[int] = []
+        pairs: list[tuple[int, int]] = []
+        for index, character in enumerate(text):
+            if character == "[":
+                opened.append(index)
+            elif character == "]" and opened:
+                pairs.append((opened.pop(), index + 1))
+        outermost: list[tuple[int, int]] = []
+        for start, end in sorted(pairs):
+            if not outermost or start >= outermost[-1][1]:
+                outermost.append((start, end))
+        return outermost
+
+    def _bracket_candidate(
+        self,
+        block: DocumentBlock,
+        start: int,
+        end: int,
+        seen_labels: dict[str, int],
+    ) -> FieldCandidate | None:
+        inner = block.text[start + 1 : end - 1].strip()
+        has_words = any(character.isalpha() for character in inner)
+        # "[1]" is a citation; "[...]" is an unnamed blank.
+        if len(inner) > MAX_BRACKET_CHARS or not (has_words or re.search(r"…|\.{2,}", inner)):
+            return None
+        hint = inner.rstrip(" .…")
+        if has_words:
+            head = re.split(r"\s+[–—-]\s+ví dụ\b|:\s", hint, flags=re.IGNORECASE)[0]
+            label = self._normal_label(head.rstrip(" .…/"))
+        else:
+            label = self._label_before_blank(block.text, start) or "Nội dung"
+        if len(label) > MAX_BRACKET_LABEL:
+            label = label[: MAX_BRACKET_LABEL - 1].rsplit(" ", 1)[0] + "…"
+        seen_labels[label.casefold()] += 1
+        occurrence_number = seen_labels[label.casefold()]
+        distinct = label if occurrence_number == 1 else f"{label} ({occurrence_number})"
+        candidate = self._new_candidate(
+            block, start, end, distinct, DetectionMethod.BRACKET, 0.8
+        )
+        lowered = hint.casefold()
+        if lowered.startswith("ngày"):
+            candidate.type = FieldType.DATE
+        elif any(term in lowered for term in LONG_BRACKET_HINTS):
+            candidate.type = FieldType.LONG_TEXT
+        else:
+            candidate.type = FieldType.SHORT_TEXT
+        candidate.options = []
+        if has_words and hint != label:
+            candidate.instructions.append(Instruction(text=inner))
+        return candidate
 
     def _propose_comment_only_fields(
         self,
@@ -856,7 +967,9 @@ class DocxAnalyzer:
         )
         if numbered:
             tail = f"{numbered[-1].group(1)}. {numbered[-1].group(2).strip()}"
-        return self._normal_label(tail) if 1 <= len(tail) <= 120 else None
+        if not any(character.isalnum() for character in tail):
+            return None
+        return self._normal_label(tail) if len(tail) <= 120 else None
 
     def _is_heading_placeholder(self, text: str, start: int, end: int, label: str) -> bool:
         """Skip a blank embedded in an all-caps heading with a parenthetical note."""
@@ -866,7 +979,8 @@ class DocxAnalyzer:
     def _is_reference_dots(self, text: str, start: int, end: int) -> bool:
         left = text[:start].rstrip()
         right = text[end:].lstrip()
-        short_dots = end - start <= 8
+        # Count what is printed: one ellipsis character is three dots.
+        short_dots = len(text[start:end].replace("…", "...")) <= 8
         numeric_reference = bool(re.match(r"\d+\s*\.", right) or re.search(r"\.\s*\d+$", left))
         return short_dots and numeric_reference
 

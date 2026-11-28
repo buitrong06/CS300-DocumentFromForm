@@ -1,7 +1,7 @@
 from io import BytesIO
 from zipfile import ZipFile
 
-from app.modules.templates.schemas import CandidateStatus, FillRequest
+from app.modules.templates.schemas import CandidateStatus, FieldType, FillRequest
 from app.modules.templates.services.docx_analyzer import DocxAnalyzer
 from app.modules.templates.services.docx_filler import DocxFiller
 from tests.templates.test_docx_analyzer import docx_with_body
@@ -50,3 +50,25 @@ def test_fills_wingdings_checkbox_as_a_checked_box() -> None:
     xml = word_document_text(output)
     assert "☒" in xml
     assert "w:sym" not in xml
+
+
+def test_fills_supported_long_rich_text_as_formatted_word_runs() -> None:
+    source = docx_with_body("<w:p><w:r><w:t>{{Nội dung}}</w:t></w:r></w:p>")
+    generation = DocxAnalyzer().analyze(source, "template.docx")
+    field = generation.candidates[0].model_copy(
+        update={"status": CandidateStatus.ACCEPTED, "type": FieldType.LONG_TEXT}
+    )
+    generation.candidates = [field]
+    value = (
+        '{"type":"doc","content":[{"type":"paragraph","content":['
+        '{"type":"text","text":"Đậm","marks":[{"type":"bold"}]},'
+        '{"type":"text","text":" nghiêng","marks":[{"type":"italic"}]}]}]}'
+    )
+
+    output = DocxFiller().fill(source, generation, FillRequest(values={field.id: value}))
+    xml = word_document_text(output)
+
+    assert "Đậm" in xml
+    assert "nghiêng" in xml
+    assert "<w:b" in xml
+    assert "<w:i" in xml

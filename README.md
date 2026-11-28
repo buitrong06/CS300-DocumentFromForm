@@ -7,7 +7,7 @@ A web application for Vietnamese administrative and organizational document prep
 - **Frontend (`apps/web/`)**: React + TypeScript + Vite (Feature-Folder layout: `src/app/`, `src/shared/`, `src/features/<slice>/`)
 - **Backend (`apps/api/`)**: Python 3.12 + FastAPI Modular Monolith + SQLAlchemy 2.0 / Alembic
 - **Database & Storage**: PostgreSQL 16 (relational metadata, `JSONB` schemas, append-only snapshots) + Local File Storage / Cloudflare R2 (`file_artifacts`)
-- **Document & AI Engines**: `python-docx` / `docxtpl` + LibreOffice Headless (authoritative DOCX/PDF rendering) + optional Ollama-compatible LLM (evidence-grounded semantic checks only)
+- **Document & AI Engines**: `python-docx` / `docxtpl` + LibreOffice Headless (authoritative DOCX/PDF rendering; local subprocess by default, or the optional Gotenberg `renderer` container) + optional Ollama-compatible LLM (evidence-grounded semantic checks only)
 - **Authentication**: Local-dev Auth Bypass for Week 0 development; Firebase Authentication for production/cloud target
 
 ## Repository Structure
@@ -42,7 +42,8 @@ A web application for Vietnamese administrative and organizational document prep
    - Database ER Model: [docs/analysis-and-design/database-overview.md](docs/analysis-and-design/database-overview.md)
 4. Copy `.env.example` to `.env` for local development.
 5. Start PostgreSQL with `docker compose up -d postgres`. From `apps/api/`, run `alembic upgrade head` and `python -m app.core.seed` to provision the local development account and sample records.
-6. Track verified slice implementation progress in [docs/management/IMPLEMENTATION_STATUS.md](docs/management/IMPLEMENTATION_STATUS.md).
+6. PDF preview and export use a local LibreOffice (`LIBREOFFICE_BINARY`) by default. To use the optional Gotenberg `renderer` container instead (`DEC-022`), run `docker compose up -d renderer`, set `RENDER_SERVICE_URL=http://127.0.0.1:3100` in `.env`, and restart the API. A failed service call does not fall back to the local LibreOffice. For Times New Roman, see [fonts/README.md](fonts/README.md).
+7. Track verified slice implementation progress in [docs/management/IMPLEMENTATION_STATUS.md](docs/management/IMPLEMENTATION_STATUS.md).
 
 ### DOCX Form Extraction
 

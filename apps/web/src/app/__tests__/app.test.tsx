@@ -12,7 +12,7 @@ describe("application shell", () => {
       </MemoryRouter>,
     );
 
-    expect(html).toContain("Trích xuất trường");
-    expect(html).toContain("Prototype PA02");
+    expect(html).toContain("Tạo Mẫu biểu");
+    expect(html).toContain("Prototype PA02 (mock)");
   });
 });

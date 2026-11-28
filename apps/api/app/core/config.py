@@ -29,6 +29,11 @@ class Settings(BaseSettings):
 
     storage_backend: Literal["local", "r2"] = "local"
     storage_local_dir: str = "./storage"
+    libreoffice_binary: str = "libreoffice"
+    # Optional Gotenberg-compatible service (DEC-022); empty runs LibreOffice on this host.
+    render_service_url: str = ""
+    render_timeout_seconds: int = 60
+    render_work_dir: str = str(REPO_ROOT / "tmp" / "render")
 
     llm_enabled: bool = False
     llm_base_url: str = "http://127.0.0.1:11434"
